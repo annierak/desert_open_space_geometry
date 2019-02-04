@@ -1,0 +1,11 @@
+*~
+*.egg-info
+*.pyc
+*.hdf5
+*.pkl
+*.mp4
+*.npz
+*.pkl
+*.ipynb
+*.png
+*.html
