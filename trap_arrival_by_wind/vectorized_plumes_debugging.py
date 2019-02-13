@@ -236,11 +236,11 @@ for mode,fly_facecolor,fly_edgecolor,a in zip(
     plt.text(1050,-600-a,mode,verticalalignment='center')
 
 
-t_start = 10*60.0 #- release_delay
-t = 10*60.0 #- release_delay
+# t_start = 10*60.0 #- release_delay
+# t = 10*60.0 #- release_delay
 
-t = 5.*60
-t_start = 5.*60
+t = 3.*60
+t_start = 0.*60
 
 plt.ion()
 # plt.show()
@@ -253,19 +253,19 @@ while t<simulation_time:
         swarm.update(t,dt,wind_field,importedPlumes,traps,pre_stored=True)
         print('-o')
         # print(importedPlumes.value(t,swarm.x_position,swarm.y_position))
-        xs, ys = np.meshgrid(np.linspace(-1000,1000,50),np.linspace(-1000,1000,50))
-        test_concs = importedPlumes.value(t,xs.flatten(),ys.flatten())
-        plt.figure(10)
-        plt.scatter(xs.flatten(),ys.flatten(),c=test_concs)
-        # plt.gray()
-        puff_array = importedPlumes.puff_array_at_time(t)
-        plt.figure(11)
-        plt.xlim([-1000,1000])
-        plt.ylim([-1000,1000])
-        plt.scatter(1000*np.cos(np.linspace(
-            0,2*np.pi,100)),1000*np.sin(np.linspace(0,2*np.pi,100)),c='r')
-        plt.scatter(puff_array[:,:,0].flatten(),puff_array[:,:,1].flatten())
-        time.sleep(1)
+        # xs, ys = np.meshgrid(np.linspace(-1000,1000,50),np.linspace(-1000,1000,50))
+        # test_concs = importedPlumes.value(t,xs.flatten(),ys.flatten())
+        # plt.figure(10)
+        # plt.scatter(xs.flatten(),ys.flatten(),c=test_concs)
+        # # plt.gray()
+        # puff_array = importedPlumes.puff_array_at_time(t)
+        # plt.figure(11)
+        # plt.xlim([-1000,1000])
+        # plt.ylim([-1000,1000])
+        # plt.scatter(1000*np.cos(np.linspace(
+        #     0,2*np.pi,100)),1000*np.sin(np.linspace(0,2*np.pi,100)),c='r')
+        # plt.scatter(puff_array[:,:,0].flatten(),puff_array[:,:,1].flatten())
+        # time.sleep(1)
         # plt.clf()
         print('o-')
          #for presaved plumes
