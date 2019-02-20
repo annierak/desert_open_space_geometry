@@ -1,0 +1,2 @@
+This angle sweep looks at doing a puff distance to source cutoff. 
+Distance = 3000m

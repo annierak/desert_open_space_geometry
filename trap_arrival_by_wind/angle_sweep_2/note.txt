@@ -1,0 +1,2 @@
+ 
+These were made using the circularly bound arena (specified radius of 1500 m from center). It doesn't look like this resolves the symmetry issue.

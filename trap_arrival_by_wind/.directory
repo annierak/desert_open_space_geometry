@@ -1,6 +1,8 @@
 [Dolphin]
+HeaderColumnWidths=536,72,161,134
 SortOrder=1
 SortRole=date
-Timestamp=2019,2,11,11,14,35
+Timestamp=2019,2,19,16,2,50
 Version=3
 ViewMode=1
+VisibleRoles=Details_text,Details_size,Details_date,Details_type,CustomizedDetails

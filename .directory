@@ -1,10 +1,10 @@
 [Dolphin]
-HeaderColumnWidths=450,72,126
-SortOrder=1
-SortRole=date
-Timestamp=2019,2,4,14,54,45
+HeaderColumnWidths=648,72,126
+SortRole=type
+Timestamp=2019,2,18,15,34,20
 Version=3
 ViewMode=1
+VisibleRoles=Details_text,Details_size,Details_date,Details_type,CustomizedDetails
 
 [Settings]
 HiddenFilesShown=true
