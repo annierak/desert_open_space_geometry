@@ -1,0 +1,2 @@
+8 reps of 1.4 m/s wind at 7pi/8, for visualizing arrival time courses.
+Plume width factor 16 did not collect barely any flies (see wide_plume_video.mp4) so switching to factor 4.

@@ -1,0 +1,2 @@
+Same as parent folder (looking at square arena cutoffs) but doing 10 repeats on an angle value that shouldn't be symmetric for a square arena: 
+7pi/8.

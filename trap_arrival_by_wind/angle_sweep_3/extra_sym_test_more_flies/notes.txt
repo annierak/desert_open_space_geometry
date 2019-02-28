@@ -1,0 +1,1 @@
+Also doing 7pi/8 for the distance cutoff = 3000m, like in the extra_sym_test folder in the parent folder, but this time use 8k flies. 

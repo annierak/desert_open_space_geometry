@@ -21,12 +21,14 @@ import odor_tracking_sim.utility as utility
 import odor_tracking_sim.simulation_running_tools as srt
 from pompy import models,processors
 
-from multiprocessing import Pool
+num_iterations = 8
 
-def main(plume_width_factor):
+def f(wind_angle,i):
 
-    file_name = 'plume_width_testing'
-    file_name = file_name +'_plume_width_factor'+str(plume_width_factor)
+    wind_mag = 1.4
+
+    file_name = 'trap_arrival_by_wind_live_coarse_dt'
+    file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]+'_iter_'+str(i)
     output_file = file_name+'.pkl'
 
     dt = 0.25
@@ -41,12 +43,6 @@ def main(plume_width_factor):
     t_start = 0.0
     t = 0. - release_delay
 
-    # Set up figure
-    fig = plt.figure(figsize=(11, 11))
-    ax = fig.add_subplot(111)
-
-    wind_mag = 1.8
-    wind_angle = 13*scipy.pi/8.
 
     wind_param = {
                 'speed': wind_mag,
@@ -100,7 +96,7 @@ def main(plume_width_factor):
 
 
     # Set up plume model
-    puff_mol_amount = 1.
+    plume_width_factor = 8.
     centre_rel_diff_scale = 2.*plume_width_factor
     # puff_release_rate = 0.001
     puff_release_rate = 10
@@ -111,11 +107,14 @@ def main(plume_width_factor):
 
     plume_model = models.PlumeModel(
         sim_region, source_pos, wind_field,simulation_time+release_delay,
-        plume_dt,
+        plume_dt,plume_cutoff_radius=1500,
         centre_rel_diff_scale=centre_rel_diff_scale,
         puff_release_rate=puff_release_rate,
         puff_init_rad=puff_init_rad,puff_spread_rate=puff_spread_rate,
         max_num_puffs=max_num_puffs)
+
+
+    puff_mol_amount = 1.
 
     #Setup fly swarm
     wind_slippage = (0.,1.)
@@ -181,45 +180,123 @@ def main(plume_width_factor):
                 swarm.update(t,dt,wind_field_noiseless,array_gen_flies,traps,plumes=plume_model,
                     pre_stored=False)
             t+= dt
+
     with open(output_file, 'w') as f:
         pickle.dump((wind_field_noiseless,swarm),f)
 
+
+def g(wind_angle,num_iterations=num_iterations):
+
+    wind_mag = 1.4
+    swarms = []
+
+    #Loop through pickle files for that parameter value and merge counts
+    for i in range(num_iterations):
+
+        file_name = 'trap_arrival_by_wind_live_coarse_dt'
+        file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]+'_iter_'+str(i)
+        output_file = file_name+'.pkl'
+
+        with open(output_file, 'r') as f:
+            (_,swarm) = pickle.load(f)
+
+        swarms.append(swarm)
+
+
     #Trap arrival plot
-    trap_locs = (2*scipy.pi/swarm.num_traps)*scipy.array(swarm.list_all_traps())
-    sim_trap_counts = swarm.get_trap_counts()
 
-    #Set 0s to 1 for plotting purposes
-    sim_trap_counts[sim_trap_counts==0] = .5
+    num_bins = 120
 
-    radius_scale = 0.3
-    plot_size = 1.5
-    plt.figure(200+int(10*wind_mag))
-    ax = plt.subplot(aspect=1)
-    trap_locs_2d = [(scipy.cos(trap_loc),scipy.sin(trap_loc)) for trap_loc in trap_locs]
-    patches = [plt.Circle(center, size) for center, size in zip(trap_locs_2d, radius_scale*sim_trap_counts/max(sim_trap_counts))]
-    coll = matplotlib.collections.PatchCollection(patches, facecolors='blue',edgecolors='blue')
-    ax.add_collection(coll)
-    ax.set_ylim([-plot_size,plot_size]);ax.set_xlim([-plot_size,plot_size])
-    ax.set_xticks([])
-    ax.set_xticklabels('')
-    ax.set_yticks([])
-    ax.set_yticklabels('')
-    #Wind arrow
-    plt.arrow(0.5, 0.5, 0.1*scipy.cos(wind_angle), 0.1*scipy.sin(wind_angle),transform=ax.transAxes,color='b',
-        width=0.001)
-    # ax.text(0.55, 0.5,'Wind',transform=ax.transAxes,color='b')
-    ax.text(0,1.5,'N',horizontalalignment='center',verticalalignment='center',fontsize=25)
-    ax.text(0,-1.5,'S',horizontalalignment='center',verticalalignment='center',fontsize=25)
-    ax.text(1.5,0,'E',horizontalalignment='center',verticalalignment='center',fontsize=25)
-    ax.text(-1.5,0,'W',horizontalalignment='center',verticalalignment='center',fontsize=25)
-    # plt.title('Simulated')
+    trap_num_list = swarms[0].get_trap_nums()
+
+
+    peak_counts = scipy.zeros(len(trap_num_list))
+    peak_counts = scipy.zeros(8)
+    rasters = []
+
+    fig = plt.figure(figsize=(7, 11))
+
     fig.patch.set_facecolor('white')
-    plt.axis('off')
-    ax.text(0,1.7,'Trap Counts'+' (Wind Mag: '+str(wind_mag)[0:3]+')',horizontalalignment='center',verticalalignment='center',fontsize=20)
-    plt.savefig(file_name+'.png',format='png')
 
-pool = Pool(processes=6)
+    labels = ['N','NE','E','SE','S','SW','W','NW']
 
-# main(0.4)
+    sim_reorder = scipy.array([3,2,1,8,7,6,5,4])
 
-pool.map(main,[4,16])
+    #Simulated histogram
+    # for i in range(len(trap_num_list)):
+    for i in range(8):
+
+        row = sim_reorder[i]-1
+        # ax = plt.subplot2grid((len(trap_num_list),1),(i,0))
+        ax = plt.subplot2grid((8,1),(row,0))
+        t_sim = scipy.concatenate(tuple(swarm.get_time_trapped(i) for swarm in swarms))
+
+        if len(t_sim)==0:
+            ax.set_xticks([0,10,20,30,40,50])
+            trap_total = 0
+            pass
+        else:
+            t_sim = t_sim/60.
+            (n, bins, patches) = ax.hist(t_sim,num_bins,cumulative=True,
+            histtype='step',
+            range=(0,max(t_sim)))
+            trap_total = int(sum(n))
+            try:
+                peak_counts[i]=max(n)
+            except(IndexError):
+                peak_counts[i]=0
+
+        if sim_reorder[i]-1==0:
+            ax.set_title('Cumulative Trap Arrivals \n Wide Plumes, Wind Mag: '+str(wind_mag)+', Wind Angle: '+str(wind_angle)[0:4])
+
+        ax.set_xlim([0,50])
+        # ax.set_yticks([])
+        ax.set_yticks([ax.get_yticks()[0],ax.get_yticks()[-1]])
+        plt.tick_params(
+        axis='x',          # changes apply to the x-axis
+        which='both',      # both major and minor ticks are affected
+        bottom=True,      # ticks along the bottom edge are off
+        top=False,         # ticks along the top edge are off
+        labelbottom=True)
+        # ax.text(-0.1,0.5,str(trap_total),transform=ax.transAxes,fontsize=20,horizontalalignment='center')
+        ax.text(-0.1,0.5,str(labels[sim_reorder[i]-1]),transform=ax.transAxes,fontsize=20,
+            horizontalalignment='center',verticalalignment='center')
+        if sim_reorder[i]-1==7:
+            ax.set_xlabel('Time (min)',x=0.5,horizontalalignment='center',fontsize=20)
+            plt.tick_params(axis='both', which='major', labelsize=15)
+        else:
+            ax.set_xticklabels('')
+
+        # plt.text(0.5,0.95,sys.argv[1],fontsize=15,transform=plt.gcf().transFigure,horizontalalignment='center')
+
+        file_name = 'trap_time_course_by_wind_live_coarse_dt'
+        png_file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]
+        plt.savefig(png_file_name+'.png',format='png')
+
+import multiprocessing
+from itertools import product
+from contextlib import contextmanager
+
+def f_unpack(args):
+    return f(*args)
+
+@contextmanager
+def poolcontext(*args, **kwargs):
+    pool = multiprocessing.Pool(*args, **kwargs)
+    yield pool
+    pool.terminate()
+
+# angles = list(np.linspace(3*np.pi/2,7*np.pi/4,6))
+angles = [7*np.pi/8]#list(np.linspace(3*np.pi/2,7*np.pi/4,6))
+iterations = range(num_iterations)
+
+# angles = [np.pi,np.pi/2]
+
+# with poolcontext(processes=6) as pool:
+#     pool.map(f_unpack, product(angles, iterations))
+#
+# pool = multiprocessing.Pool(processes=8)
+#
+# pool.map(g, angles)
+
+g(angles[0])

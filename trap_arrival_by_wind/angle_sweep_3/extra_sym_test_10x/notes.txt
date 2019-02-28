@@ -1,0 +1,1 @@
+2000 flies, 10 reps of simulation, 3000m distance  cutoff. 

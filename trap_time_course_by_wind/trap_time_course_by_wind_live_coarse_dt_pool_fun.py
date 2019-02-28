@@ -212,71 +212,6 @@ def main(wind_angle):
                 box_min,box_max,r_sq_max,epsilon,puff_mol_amount,N)
 
 
-    #Initial fly plotting
-    #Sub-dictionary for color codes for the fly modes
-    Mode_StartMode = 0
-    Mode_FlyUpWind = 1
-    Mode_CastForOdor = 2
-    Mode_Trapped = 3
-
-
-    edgecolor_dict = {Mode_StartMode : 'blue',
-    Mode_FlyUpWind : 'red',
-    Mode_CastForOdor : 'red',
-    Mode_Trapped :   'black'}
-
-    facecolor_dict = {Mode_StartMode : 'blue',
-    Mode_FlyUpWind : 'red',
-    Mode_CastForOdor : 'white',
-    Mode_Trapped :   'black'}
-
-
-    fly_edgecolors = [edgecolor_dict[mode] for mode in swarm.mode]
-    fly_facecolors =  [facecolor_dict[mode] for mode in swarm.mode]
-    fly_dots = plt.scatter(swarm.x_position, swarm.y_position,
-        edgecolor=fly_edgecolors,facecolor = fly_facecolors,alpha=0.9)
-
-    #Put the time in the corner
-    (xmin,xmax) = ax.get_xlim();(ymin,ymax) = ax.get_ylim()
-    text = '0 min 0 sec'
-    timer= ax.text(xmax,ymax,text,color='r',horizontalalignment='right')
-    ax.text(1.,1.02,'time since release:',color='r',transform=ax.transAxes,
-        horizontalalignment='right')
-
-    #Wind arrow
-    plt.arrow(0.5, 0.5, 0.07, -0.07,transform=ax.transAxes,color='b',
-        width=0.001)
-    ax.text(0.75, 0.9,'Wind',transform=ax.transAxes,color='b')
-
-
-    # #traps
-    for x,y in traps.param['source_locations']:
-
-        #Black x
-        plt.scatter(x,y,marker='x',s=50,c='k')
-
-        # Red circles
-        # p = matplotlib.patches.Circle((x, y), 15,color='red')
-        # ax.add_patch(p)
-
-    #Remove plot edges and add scale bar
-    fig.patch.set_facecolor('white')
-    plt.plot([-900,-800],[900,900],color='k')#,transform=ax.transData,color='k')
-    ax.text(-900,820,'100 m')
-    plt.axis('off')
-
-    #Fly behavior color legend
-    for mode,fly_facecolor,fly_edgecolor,a in zip(
-        ['Dispersing','Surging','Casting','Trapped'],
-        facecolor_dict.values(),
-        edgecolor_dict.values(),
-        [0,50,100,150]):
-
-        plt.scatter([1000],[-600-a],edgecolor=fly_edgecolor,
-        facecolor=fly_facecolor, s=20)
-        plt.text(1050,-600-a,mode,verticalalignment='center')
-
-
     # plt.ion()
     # plt.show()
     # raw_input()
@@ -297,52 +232,6 @@ def main(wind_angle):
                 swarm.update(t,dt,wind_field_noiseless,array_gen_flies,traps,plumes=plume_model,
                     pre_stored=False)
             t+= dt
-            # time.sleep(0.001)
-        # Update live display
-        # '''plot the flies'''
-    #     if t>0:
-    #         # Update time display
-    #         release_delay = release_delay/60.
-    #         text ='{0} min {1} sec'.format(
-    #         int(scipy.floor(abs(t/60.))),int(scipy.floor(abs(t)%60.)))
-    #         timer.set_text(text)
-    #
-    #
-    #         fly_dots.set_offsets(scipy.c_[swarm.x_position,swarm.y_position])
-    #
-    #         fly_edgecolors = [edgecolor_dict[mode] for mode in swarm.mode]
-    #         fly_facecolors =  [facecolor_dict[mode] for mode in swarm.mode]
-    #         #
-    #         fly_dots.set_edgecolor(fly_edgecolors)
-    #         fly_dots.set_facecolor(fly_facecolors)
-    #
-    #         trap_list = []
-    #         for trap_num, trap_loc in enumerate(traps.param['source_locations']):
-    #             mask_trap = swarm.trap_num == trap_num
-    #             trap_cnt = mask_trap.sum()
-    #             trap_list.append(trap_cnt)
-    #         total_cnt = sum(trap_list)
-    #
-    #         conc_array = array_gen.generate_single_array(plume_model.puffs)
-    #
-    #         # non_inf_log =
-    #         log_im = scipy.log(conc_array.T[::-1])
-    #         cutoff_l = scipy.percentile(log_im[~scipy.isinf(log_im)],10)
-    #         cutoff_u = scipy.percentile(log_im[~scipy.isinf(log_im)],99)
-    #
-    #         # im = (log_im>cutoff_l) & (log_im<0.1)
-    #         # n = matplotlib.colors.Normalize(vmin=0,vmax=1)
-    #         # image.set_data(im)
-    #         # image.set_norm(n)
-    #
-    #         conc_im.set_data(log_im)
-    #         n = matplotlib.colors.Normalize(vmin=cutoff_l,vmax=cutoff_u)
-    #         conc_im.set_norm(n)
-    #
-    #         plt.pause(0.0001)
-    #         writer.grab_frame()
-    #
-    # writer.finish()
 
     with open(output_file, 'w') as f:
         pickle.dump((wind_field_noiseless,swarm),f)

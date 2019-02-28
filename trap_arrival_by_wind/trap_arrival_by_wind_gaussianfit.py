@@ -21,9 +21,9 @@ import odor_tracking_sim.utility as utility
 import odor_tracking_sim.simulation_running_tools as srt
 from pompy import models,processors
 
-for wind_mag in np.arange(0.4,3.8,0.2):
+for wind_mag in [1.4]:#np.arange(0.4,3.8,0.2):
 
-    file_name = 'trap_arrival_by_wind_sutton_wind_mag_'+str(wind_mag)
+    file_name = 'trap_arrival_by_wind_fit_gauss_wind_mag_'+str(wind_mag)
     output_file = file_name+'.pkl'
 
     dt = 0.25
@@ -44,10 +44,10 @@ for wind_mag in np.arange(0.4,3.8,0.2):
     ax = fig.add_subplot(111)
 
     # #Video
-    # FFMpegWriter = animate.writers['ffmpeg']
-    # metadata = {'title':file_name,}
-    # writer = FFMpegWriter(fps=frame_rate, metadata=metadata)
-    # writer.setup(fig, file_name+'.mp4', 500)
+    FFMpegWriter = animate.writers['ffmpeg']
+    metadata = {'title':file_name,}
+    writer = FFMpegWriter(fps=frame_rate, metadata=metadata)
+    writer.setup(fig, file_name+'.mp4', 500)
 
     wind_angle = 25*scipy.pi/16.
     wind_param = {
@@ -84,12 +84,13 @@ for wind_mag in np.arange(0.4,3.8,0.2):
 
     source_pos = scipy.array([scipy.array(tup) for tup in traps.param['source_locations']])
 
-    # Set up Sutton plume model -- use the same parameters as determined in
-    # fly_behavior_sim/near_plume_simulation_sutton.py
-
-    Q,C_y,n = (10,0.4,0.9)
-
-    suttonPlumes = models.SuttonModelPlume(Q,C_y,n,source_pos,wind_angle)
+    # # Set up Sutton plume model -- use the same parameters as determined in
+    # # fly_behavior_sim/near_plume_simulation_sutton.py
+    #
+    # Q,C_y,n = (10,0.4,0.9)
+    #
+    # suttonPlumes = models.SuttonModelPlume(Q,C_y,n,source_pos,wind_angle)
+    gaussianfitPlumes = models.GaussianFitPlume(source_pos,wind_angle)
 
     #Setup fly swarm
     wind_slippage = (0.,1.)
@@ -145,7 +146,7 @@ for wind_mag in np.arange(0.4,3.8,0.2):
 
 
     #Concentration plotting
-    conc_d = suttonPlumes.conc_im(im_extents)
+    conc_d = gaussianfitPlumes.conc_im(im_extents)
 
     cmap = matplotlib.colors.ListedColormap(['white', 'orange'])
     cmap = 'YlOrBr'
@@ -237,10 +238,10 @@ for wind_mag in np.arange(0.4,3.8,0.2):
     # plt.show()
     # raw_input()
     while t<simulation_time:
-        # for k in range(capture_interval):
+        for k in range(capture_interval):
             #update flies
             print('t: {0:1.2f}'.format(t))
-            swarm.update(t,dt,wind_field,suttonPlumes,traps)
+            swarm.update(t,dt,wind_field,gaussianfitPlumes,traps)
             t+= dt
             # time.sleep(0.001)
         # Update live display
@@ -251,25 +252,25 @@ for wind_mag in np.arange(0.4,3.8,0.2):
         # timer.set_text(text)
         #
         # '''plot the flies'''
-        # fly_dots.set_offsets(scipy.c_[swarm.x_position,swarm.y_position])
-        #
-        # fly_edgecolors = [edgecolor_dict[mode] for mode in swarm.mode]
-        # fly_facecolors =  [facecolor_dict[mode] for mode in swarm.mode]
-        # #
-        # fly_dots.set_edgecolor(fly_edgecolors)
-        # fly_dots.set_facecolor(fly_facecolors)
-        #
-        # trap_list = []
-        # for trap_num, trap_loc in enumerate(traps.param['source_locations']):
-        #     mask_trap = swarm.trap_num == trap_num
-        #     trap_cnt = mask_trap.sum()
-        #     trap_list.append(trap_cnt)
-        # total_cnt = sum(trap_list)
-        #
-            # plt.pause(0.0001)
-        # writer.grab_frame()
+        fly_dots.set_offsets(scipy.c_[swarm.x_position,swarm.y_position])
 
-    # writer.finish()
+        fly_edgecolors = [edgecolor_dict[mode] for mode in swarm.mode]
+        fly_facecolors =  [facecolor_dict[mode] for mode in swarm.mode]
+        #
+        fly_dots.set_edgecolor(fly_edgecolors)
+        fly_dots.set_facecolor(fly_facecolors)
+
+        trap_list = []
+        for trap_num, trap_loc in enumerate(traps.param['source_locations']):
+            mask_trap = swarm.trap_num == trap_num
+            trap_cnt = mask_trap.sum()
+            trap_list.append(trap_cnt)
+        total_cnt = sum(trap_list)
+
+        plt.pause(0.0001)
+        writer.grab_frame()
+
+    writer.finish()
 
     with open(output_file, 'w') as f:
         pickle.dump(swarm,f)

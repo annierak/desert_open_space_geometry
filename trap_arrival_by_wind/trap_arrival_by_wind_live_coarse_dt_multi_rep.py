@@ -260,14 +260,15 @@ def poolcontext(*args, **kwargs):
     yield pool
     pool.terminate()
 
-angles = list(np.linspace(3*np.pi/2,7*np.pi/4,6))
+# angles = list(np.linspace(3*np.pi/2,7*np.pi/4,6))
+angles = [7*np.pi/8]#list(np.linspace(3*np.pi/2,7*np.pi/4,6))
 iterations = range(num_iterations)
 
 # angles = [np.pi,np.pi/2]
 
-with poolcontext(processes=6) as pool:
-    pool.map(f_unpack, product(angles, iterations))
-
+# with poolcontext(processes=6) as pool:
+#     pool.map(f_unpack, product(angles, iterations))
+#
 pool = multiprocessing.Pool(processes=6)
 
 pool.map(g, angles)
