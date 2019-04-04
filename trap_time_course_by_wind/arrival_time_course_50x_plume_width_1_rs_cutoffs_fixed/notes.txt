@@ -1,0 +1,4 @@
+50 reps of 1.4 m/s wind at 7pi/8, for visualizing arrival time courses.
+Plume width factor 1.
+This time, made sure to specify the random seed distinctly for each iteration.
+This time, fixed the asymmetric plume cutoffs.

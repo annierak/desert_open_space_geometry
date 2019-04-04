@@ -21,11 +21,13 @@ import odor_tracking_sim.utility as utility
 import odor_tracking_sim.simulation_running_tools as srt
 from pompy import models,processors
 
-num_iterations = 10
+num_iterations = 1
 
 def f(wind_angle,i):
 
-    wind_mag = 1.4
+    random_state = np.random.RandomState(i)
+
+    wind_mag = 1.2
 
     file_name = 'trap_arrival_by_wind_live_coarse_dt'
     file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]+'_iter_'+str(i)
@@ -91,7 +93,7 @@ def f(wind_angle,i):
     Kx = Ky = 10000 #highest value observed to not cause explosion: 10000
     wind_field = models.WindModel(wind_region,int(wind_grid_density*aspect_ratio),
     wind_grid_density,noise_gain=noise_gain,noise_damp=noise_damp,
-    noise_bandwidth=noise_bandwidth,Kx=Kx,Ky=Ky,
+    noise_bandwidth=noise_bandwidth,Kx=Kx,Ky=Ky,noise_rand=random_state,
     diff_eq=diff_eq,angle=constant_wind_angle,mag=wind_mag)
 
 
@@ -110,7 +112,7 @@ def f(wind_angle,i):
         centre_rel_diff_scale=centre_rel_diff_scale,
         puff_release_rate=puff_release_rate,
         puff_init_rad=puff_init_rad,puff_spread_rate=puff_spread_rate,
-        max_num_puffs=max_num_puffs)
+        max_num_puffs=max_num_puffs,prng=random_state)
 
 
     puff_mol_amount = 1.
@@ -160,7 +162,10 @@ def f(wind_angle,i):
 
     #Conc array gen to be used for the flies
     sim_region_tuple = plume_model.sim_region.as_tuple()
-    box_min,box_max = sim_region_tuple[1],sim_region_tuple[2]
+
+    #for the plume distance cutoff version, make sure this is at least 2x radius
+    box_min,box_max = -3000.,3000.
+
 
     r_sq_max=20;epsilon=0.00001;N=1e6
 
@@ -186,26 +191,38 @@ def f(wind_angle,i):
 
 def g(wind_angle,num_iterations=num_iterations):
 
-    wind_mag = 1.4
+    # wind_angle = 7*np.pi/4
+    wind_mag = 1.2
 
     #Loop through pickle files for that parameter value and merge counts
     for i in range(num_iterations):
+        # file_name = 'trap_arrival_by_wind_live_coarse_dt'
+        # file_name = 'trap_time_course_by_wind'
+        # file_name = 'trap_arrival_by_wind_fit_gauss'
+        file_name = 'trap_arrival_by_wind_adjusted_fit_gauss'
+        file_name = file_name +'_wind_mag_'+str(wind_mag)#+'_wind_angle_'+str(wind_angle)[0:4]+'_iter_'+str(i)
 
-        file_name = 'trap_arrival_by_wind_live_coarse_dt'
-        file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]+'_iter_'+str(i)
+
+        # file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]+'_iter_'+str(i)
+        # file_name = file_name +'_wind_mag_'+str(wind_mag)
+
+
         output_file = file_name+'.pkl'
 
         with open(output_file, 'r') as f:
             (_,swarm) = pickle.load(f)
+            # swarm = pickle.load(f)
 
         if i==0:
             sim_trap_counts_cumul = np.zeros(swarm.num_traps)
 
         sim_trap_counts_cumul += swarm.get_trap_counts()
 
+    # print(sim_trap_counts_cumul)
     #Trap arrival plot
 
     #Set 0s to 1 for plotting purposes
+    sim_trap_counts_cumul /= num_iterations
     sim_trap_counts_cumul[sim_trap_counts_cumul==0] = .5
     trap_locs = (2*scipy.pi/swarm.num_traps)*scipy.array(swarm.list_all_traps())
     radius_scale = 0.3
@@ -231,7 +248,7 @@ def g(wind_angle,num_iterations=num_iterations):
             verticalalignment='center',fontsize=18,color='white')
     #Wind arrow
     plt.arrow(0.5, 0.5, 0.1*scipy.cos(wind_angle), 0.1*scipy.sin(wind_angle),transform=ax.transAxes,color='b',
-        width=0.001)
+        width=0.001, head_width=0.03, head_length=0.05, )
     # ax.text(0.55, 0.5,'Wind',transform=ax.transAxes,color='b')
     ax.text(0,1.5,'N',horizontalalignment='center',verticalalignment='center',fontsize=25)
     ax.text(0,-1.5,'S',horizontalalignment='center',verticalalignment='center',fontsize=25)
@@ -242,7 +259,9 @@ def g(wind_angle,num_iterations=num_iterations):
     plt.axis('off')
     ax.text(0,1.7,'Trap Counts'+' (Wind Mag: '+str(wind_mag)[0:3]+')',horizontalalignment='center',verticalalignment='center',fontsize=20)
 
-    file_name = 'trap_arrival_by_wind_live_coarse_dt'
+    # file_name = 'trap_arrival_by_wind_live_coarse_dt'
+    file_name = 'trap_arrival_by_wind_adjusted_fit_gauss'
+
     png_file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]
 
     plt.savefig(png_file_name+'.png',format='png')
@@ -261,9 +280,9 @@ def poolcontext(*args, **kwargs):
     pool.terminate()
 
 # angles = list(np.linspace(3*np.pi/2,7*np.pi/4,6))
-angles = [7*np.pi/8]#list(np.linspace(3*np.pi/2,7*np.pi/4,6))
+angles = [7*np.pi/4]#list(np.linspace(3*np.pi/2,7*np.pi/4,6))
 iterations = range(num_iterations)
-
+wind_mags = [0.8,1.2,1.6,1.8,2.0]
 # angles = [np.pi,np.pi/2]
 
 # with poolcontext(processes=6) as pool:
@@ -272,3 +291,5 @@ iterations = range(num_iterations)
 pool = multiprocessing.Pool(processes=6)
 
 pool.map(g, angles)
+# pool.map(g, wind_mags)
+# g(wind_mags[0])

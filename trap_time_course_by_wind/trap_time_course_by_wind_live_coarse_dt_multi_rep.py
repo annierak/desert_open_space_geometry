@@ -21,13 +21,15 @@ import odor_tracking_sim.utility as utility
 import odor_tracking_sim.simulation_running_tools as srt
 from pompy import models,processors
 
-num_iterations = 8
+num_iterations = 1
 
 def f(wind_angle,i):
 
-    wind_mag = 1.4
+    random_state = np.random.RandomState(i)
 
-    file_name = 'trap_arrival_by_wind_live_coarse_dt'
+    wind_mag = 1.2
+
+    file_name = 'trap_time_course_by_wind'
     file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]+'_iter_'+str(i)
     output_file = file_name+'.pkl'
 
@@ -75,8 +77,8 @@ def f(wind_angle,i):
     xlim = (-1500., 1500.)
     ylim = (-1500., 1500.)
     sim_region = models.Rectangle(xlim[0], ylim[0], xlim[1], ylim[1])
-    wind_region = models.Rectangle(xlim[0]*1.2,ylim[0]*1.2,
-    xlim[1]*1.2,ylim[1]*1.2)
+    wind_region = models.Rectangle(xlim[0]*2,ylim[0]*2,
+    xlim[1]*2,ylim[1]*2)
 
     source_pos = scipy.array([scipy.array(tup) for tup in traps.param['source_locations']]).T
 
@@ -91,12 +93,12 @@ def f(wind_angle,i):
     Kx = Ky = 10000 #highest value observed to not cause explosion: 10000
     wind_field = models.WindModel(wind_region,int(wind_grid_density*aspect_ratio),
     wind_grid_density,noise_gain=noise_gain,noise_damp=noise_damp,
-    noise_bandwidth=noise_bandwidth,Kx=Kx,Ky=Ky,
+    noise_bandwidth=noise_bandwidth,Kx=Kx,Ky=Ky,noise_rand=random_state,
     diff_eq=diff_eq,angle=constant_wind_angle,mag=wind_mag)
 
 
     # Set up plume model
-    plume_width_factor = 8.
+    plume_width_factor = 1.
     centre_rel_diff_scale = 2.*plume_width_factor
     # puff_release_rate = 0.001
     puff_release_rate = 10
@@ -111,7 +113,7 @@ def f(wind_angle,i):
         centre_rel_diff_scale=centre_rel_diff_scale,
         puff_release_rate=puff_release_rate,
         puff_init_rad=puff_init_rad,puff_spread_rate=puff_spread_rate,
-        max_num_puffs=max_num_puffs)
+        max_num_puffs=max_num_puffs,prng=random_state)
 
 
     puff_mol_amount = 1.
@@ -161,7 +163,7 @@ def f(wind_angle,i):
 
     #Conc array gen to be used for the flies
     sim_region_tuple = plume_model.sim_region.as_tuple()
-    box_min,box_max = sim_region_tuple[1],sim_region_tuple[2]
+    box_min,box_max = -3000.,3000.
 
     r_sq_max=20;epsilon=0.00001;N=1e6
 
@@ -187,18 +189,26 @@ def f(wind_angle,i):
 
 def g(wind_angle,num_iterations=num_iterations):
 
-    wind_mag = 1.4
+    #wind_angle = 7*np.pi/4
+    wind_mag = 1.2
     swarms = []
 
     #Loop through pickle files for that parameter value and merge counts
     for i in range(num_iterations):
 
+        # file_name = 'trap_time_course_by_wind'
         file_name = 'trap_arrival_by_wind_live_coarse_dt'
-        file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]+'_iter_'+str(i)
+        #file_name = 'trap_arrival_by_wind_fit_gauss'
+        # file_name = 'trap_arrival_by_wind_adjusted_fit_gauss'
+        # file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]+'_iter_'+str(i)
+        file_name = file_name +'_wind_mag_'+str(wind_mag)#+'_wind_angle_'+str(wind_angle)[0:4]+'_iter_'+str(i)
+
+
         output_file = file_name+'.pkl'
 
         with open(output_file, 'r') as f:
-            (_,swarm) = pickle.load(f)
+            # (_,swarm) = pickle.load(f)
+            swarm = pickle.load(f)
 
         swarms.append(swarm)
 
@@ -240,18 +250,20 @@ def g(wind_angle,num_iterations=num_iterations):
             (n, bins, patches) = ax.hist(t_sim,num_bins,cumulative=True,
             histtype='step',
             range=(0,max(t_sim)))
-            trap_total = int(sum(n))
+
+            # n = n/num_iterations
+            # trap_total = int(sum(n))
+            # trap_total = int(n[-1])
             try:
                 peak_counts[i]=max(n)
             except(IndexError):
                 peak_counts[i]=0
 
         if sim_reorder[i]-1==0:
-            ax.set_title('Cumulative Trap Arrivals \n Wide Plumes, Wind Mag: '+str(wind_mag)+', Wind Angle: '+str(wind_angle)[0:4])
+            ax.set_title('Cumulative Trap Arrivals \n Narrow Plumes, Wind Mag: '+str(wind_mag)+', Wind Angle: '+str(wind_angle)[0:4])
 
         ax.set_xlim([0,50])
-        # ax.set_yticks([])
-        ax.set_yticks([ax.get_yticks()[0],ax.get_yticks()[-1]])
+        # ax.set_yticks([ax.get_yticks()[0],ax.get_yticks()[-1]])
         plt.tick_params(
         axis='x',          # changes apply to the x-axis
         which='both',      # both major and minor ticks are affected
@@ -259,6 +271,8 @@ def g(wind_angle,num_iterations=num_iterations):
         top=False,         # ticks along the top edge are off
         labelbottom=True)
         # ax.text(-0.1,0.5,str(trap_total),transform=ax.transAxes,fontsize=20,horizontalalignment='center')
+        # ax.text(-0.01,1,trap_total,transform=ax.transAxes,fontsize=10,
+        #     horizontalalignment='center',verticalalignment='center')
         ax.text(-0.1,0.5,str(labels[sim_reorder[i]-1]),transform=ax.transAxes,fontsize=20,
             horizontalalignment='center',verticalalignment='center')
         if sim_reorder[i]-1==7:
@@ -268,10 +282,22 @@ def g(wind_angle,num_iterations=num_iterations):
             ax.set_xticklabels('')
 
         # plt.text(0.5,0.95,sys.argv[1],fontsize=15,transform=plt.gcf().transFigure,horizontalalignment='center')
+    for i in range(8):
+        row = sim_reorder[i]-1
+        # ax = plt.subplot2grid((len(trap_num_list),1),(i,0))
+        ax = plt.subplot2grid((8,1),(row,0))
+        ax.set_ylim([0,max(peak_counts)])
+        ax.set_yticks([ax.get_yticks()[0],ax.get_yticks()[-1]])
 
-        file_name = 'trap_time_course_by_wind_live_coarse_dt'
-        png_file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]
-        plt.savefig(png_file_name+'.png',format='png')
+
+
+
+    file_name = 'trap_time_course_by_wind'
+    # file_name = 'trap_time_course_by_wind_adjusted_fit_gauss'
+
+    # png_file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]
+    png_file_name = file_name +'_wind_mag_'+str(wind_mag)#+'_wind_angle_'+str(wind_angle)[0:4]
+    plt.savefig(png_file_name+'.png',format='png')
 
 import multiprocessing
 from itertools import product
@@ -287,16 +313,25 @@ def poolcontext(*args, **kwargs):
     pool.terminate()
 
 # angles = list(np.linspace(3*np.pi/2,7*np.pi/4,6))
-angles = [7*np.pi/8]#list(np.linspace(3*np.pi/2,7*np.pi/4,6))
+angles = [7*np.pi/4]#list(np.linspace(3*np.pi/2,7*np.pi/4,6))
 iterations = range(num_iterations)
 
 # angles = [np.pi,np.pi/2]
 
-# with poolcontext(processes=6) as pool:
-#     pool.map(f_unpack, product(angles, iterations))
-#
-# pool = multiprocessing.Pool(processes=8)
-#
-# pool.map(g, angles)
+# f(angles[0],1)
 
-g(angles[0])
+# with poolcontext(processes=10) as pool:
+#      pool.map(f_unpack, product(angles, iterations))
+
+pool = multiprocessing.Pool(processes=10)
+#
+pool.map(g, angles)
+
+# wind_mags = np.arange(0.4,3.8,0.2)
+#wind_mags = [0.8,1.2,1.6,1.8,2.0]
+
+#pool.map(g, wind_mags)
+
+# g(wind_mags[0])
+
+# g(angles[0])

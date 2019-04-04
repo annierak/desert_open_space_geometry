@@ -1,0 +1,2 @@
+50 reps of 1.4 m/s wind at 7pi/8, for visualizing arrival time courses.
+Plume width factor 4.

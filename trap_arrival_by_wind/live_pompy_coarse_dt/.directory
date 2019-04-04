@@ -1,4 +1,7 @@
 [Dolphin]
-Timestamp=2019,2,14,11,14,56
+HeaderColumnWidths=518,72,119,134
+SortRole=type
+Timestamp=2019,3,1,10,27,19
 Version=3
 ViewMode=1
+VisibleRoles=Details_text,Details_size,Details_date,Details_type,CustomizedDetails

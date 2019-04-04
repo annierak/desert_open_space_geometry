@@ -23,15 +23,15 @@ from pompy import models,processors
 
 from multiprocessing import Pool
 
-def main(wind_angle):
+def main(wind_mag):
 
     # for wind_mag in np.arange(0.4,3.8,0.2):
     # wind_mag = float(sys.argv[1])
-    # wind_angle = 13*scipy.pi/8.
-    wind_mag = 1.4
+    wind_angle = 7*scipy.pi/4.
+    # wind_mag = 1.4
 
     file_name = 'trap_arrival_by_wind_live_coarse_dt'
-    file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]
+    file_name = file_name +'_wind_mag_'+str(wind_mag)#+'_wind_angle_'+str(wind_angle)[0:4]
     output_file = file_name+'.pkl'
 
     dt = 0.25
@@ -203,7 +203,7 @@ def main(wind_angle):
     sim_region_tuple = plume_model.sim_region.as_tuple()
     box_min,box_max = sim_region_tuple[1],sim_region_tuple[2]
 
-    #overwrite this for the plume distance cutoff version
+    #for the plume distance cutoff version, make sure this is at least 2x radius
     box_min,box_max = -3000.,3000.
 
     r_sq_max=20;epsilon=0.00001;N=1e6
@@ -272,6 +272,8 @@ def main(wind_angle):
 
 pool = Pool(processes=6)
 
-main(7*np.pi/8)
+# main(7*np.pi/8)
+
+pool.map(main,np.arange(0.4,3.8,0.2))
 
 # pool.map(main,np.linspace(3*np.pi/2,7*np.pi/4,6))

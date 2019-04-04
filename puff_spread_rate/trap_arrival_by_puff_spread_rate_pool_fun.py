@@ -163,7 +163,10 @@ def main(puff_spread_rate_factor):
 
     #Conc array gen to be used for the flies
     sim_region_tuple = plume_model.sim_region.as_tuple()
-    box_min,box_max = sim_region_tuple[1],sim_region_tuple[2]
+
+    #for the plume distance cutoff version, make sure this is at least 2x radius
+    box_min,box_max = -3000.,3000.
+    
 
     r_sq_max=20;epsilon=0.00001;N=1e6
 

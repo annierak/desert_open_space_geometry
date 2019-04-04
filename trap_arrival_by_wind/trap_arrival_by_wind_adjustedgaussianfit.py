@@ -23,7 +23,9 @@ from pompy import models,processors
 
 def main(wind_mag):#np.arange(0.4,3.8,0.2):
 
-    file_name = 'gaussian_test_'+str(wind_mag)
+    file_name = 'trap_arrival_by_wind_adjusted_fit_gauss_wind_mag_'+str(wind_mag)
+    file_name = 'video_adjusted_fit_gauss_wind_mag_'+str(wind_mag)
+
     output_file = file_name+'.pkl'
 
     dt = 0.25
@@ -31,7 +33,7 @@ def main(wind_mag):#np.arange(0.4,3.8,0.2):
     times_real_time = 20 # seconds of simulation / sec in video
     capture_interval = int(scipy.ceil(times_real_time*(1./frame_rate)/dt))
 
-    simulation_time = 50.*60. #seconds
+    simulation_time = 12.*60. #seconds
     release_delay = 0.*60#/(wind_mag)
 
     t_start = 0.0
@@ -91,7 +93,7 @@ def main(wind_mag):#np.arange(0.4,3.8,0.2):
     # Q,C_y,n = (10,0.4,0.9)
     #
     # suttonPlumes = models.SuttonModelPlume(Q,C_y,n,source_pos,wind_angle)
-    gaussianfitPlumes = models.GaussianFitPlume(source_pos,wind_angle,wind_mag)
+    gaussianfitPlumes = models.AdjustedGaussianFitPlume(source_pos,wind_angle,wind_mag)
 
     #Setup fly swarm
     wind_slippage = (0.,1.)
@@ -150,7 +152,7 @@ def main(wind_mag):#np.arange(0.4,3.8,0.2):
     conc_im = plt.imshow(conc_d,extent=im_extents,
         interpolation='none',cmap = cmap,origin='lower')
 
-    plt.colorbar()
+    # plt.colorbar()
 
 
     xmin,xmax,ymin,ymax = -1000,1000,-1000,1000
@@ -220,7 +222,7 @@ def main(wind_mag):#np.arange(0.4,3.8,0.2):
         plt.text(1050,-600-a,mode,verticalalignment='center')
 
 
-    plt.ion()
+    # plt.ion()
     # plt.show()
     # raw_input()
     while t<simulation_time:
@@ -237,7 +239,7 @@ def main(wind_mag):#np.arange(0.4,3.8,0.2):
             int(scipy.floor(abs(t/60.))),int(scipy.floor(abs(t)%60.)))
         timer.set_text(text)
         #
-        # '''plot the flies'''
+        '''plot the flies'''
         fly_dots.set_offsets(scipy.c_[swarm.x_position,swarm.y_position])
 
         fly_edgecolors = [edgecolor_dict[mode] for mode in swarm.mode]
@@ -245,7 +247,7 @@ def main(wind_mag):#np.arange(0.4,3.8,0.2):
         #
         fly_dots.set_edgecolor(fly_edgecolors)
         fly_dots.set_facecolor(fly_facecolors)
-        plt.pause(0.0001)
+        # plt.pause(0.0001)
         writer.grab_frame()
 
         trap_list = []
@@ -256,10 +258,10 @@ def main(wind_mag):#np.arange(0.4,3.8,0.2):
         total_cnt = sum(trap_list)
 
 
-    writer.finish()
+    # writer.finish()
 
-    # with open(output_file, 'w') as f:
-    #     pickle.dump(swarm,f)
+    with open(output_file, 'w') as f:
+        pickle.dump((wind_field,swarm),f)
     #
     # #Trap arrival plot
     # trap_locs = (2*scipy.pi/swarm.num_traps)*scipy.array(swarm.list_all_traps())
@@ -303,6 +305,6 @@ pool = Pool(processes=6)
 mags = [0.8,1.2,1.6,1.8,2.0]
 # mags = [1.4]
 
-main(1.6)
+main(1.2)
 
 # pool.map(main,mags)
