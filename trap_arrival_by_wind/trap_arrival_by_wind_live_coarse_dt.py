@@ -27,9 +27,10 @@ from pompy import models,processors
 wind_angle = float(sys.argv[1])
 wind_mag = 1.4
 
+
 file_name = 'trap_arrival_by_wind_live_coarse_dt'
-file_name = 'plume_width_8_video'
-# file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]
+# file_name = 'plume_width_8_video'
+file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]
 output_file = file_name+'.pkl'
 
 dt = 0.25
