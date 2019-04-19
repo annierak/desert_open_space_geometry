@@ -23,7 +23,7 @@ from pompy import models,processors
 
 from multiprocessing import Pool
 
-def main(detection_threshold):
+def main(cast_interval):
 
     # for wind_mag in np.arange(0.4,3.8,0.2):
     # wind_mag = float(sys.argv[1])
@@ -31,8 +31,12 @@ def main(detection_threshold):
     wind_mag = 1.6
 
     file_name = 'trap_arrival_by_wind_live_coarse_dt'
+    file_name = 'original_plume_test_viz'
     file_name = file_name +'_wind_mag_'+str(wind_mag)#+'_wind_angle_'+str(wind_angle)[0:4]
-    file_name = file_name +'_detection_threshold_'+str(detection_threshold)
+    # file_name = file_name +'_detection_threshold_'+str(detection_threshold)
+    # file_name = file_name +'_cast_timeout_'+str(cast_timeout)
+    # file_name = file_name +'_cast_delay_'+str(cast_delay)
+    file_name = file_name +'_cast_interval_'+str(cast_interval)
     output_file = file_name+'.pkl'
 
     dt = 0.25
@@ -160,17 +164,17 @@ def main(detection_threshold):
             'flight_speed'        : scipy.full((swarm_size,), 1.5),
             'release_time'        : release_times,
             'release_delay'       : release_delay,
-            'cast_interval'       : [1, 3],
+            'cast_interval'       : [1,3],#cast_interval,
             'wind_slippage'       : wind_slippage,
             'odor_thresholds'     : {
                 'lower': 0.0005,
-                'upper': detection_threshold
+                'upper': 0.05
                 },
             'schmitt_trigger':False,
             'low_pass_filter_length':3, #seconds
             'dt_plot': capture_interval*dt,
             't_stop':3000.,
-            'cast_timeout':20,
+            'cast_timeout': 20,
             'airspeed_saturation':True
             }
 
@@ -230,6 +234,10 @@ def main(detection_threshold):
                 # v[0:full_size-1:shrink_factor,0:full_size-1:shrink_factor]
                 # vector_field.set_UVC(u,v)
             if t>0.:
+                # plt.figure()
+                # plt.scatter(plume_model.puffs[:,:,0].flatten(),
+                #     plume_model.puffs[:,:,1].flatten(),alpha=0.1)
+                plt.show()
                 swarm.update(t,dt,wind_field_noiseless,array_gen_flies,traps,plumes=plume_model,
                     pre_stored=False)
             t+= dt
@@ -237,47 +245,23 @@ def main(detection_threshold):
     with open(output_file, 'w') as f:
         pickle.dump((wind_field_noiseless,swarm),f)
 
-def g(detection_threshold):
 
-    #Trap arrival plot
-    trap_locs = (2*scipy.pi/swarm.num_traps)*scipy.array(swarm.list_all_traps())
-    sim_trap_counts = swarm.get_trap_counts()
+# pool = Pool(processes=6)
 
-    #Set 0s to 1 for plotting purposes
-    sim_trap_counts[sim_trap_counts==0] = .5
+main(7*np.pi/8)
 
-    radius_scale = 0.3
-    plot_size = 1.5
-    plt.figure(200+int(10*wind_mag))
-    ax = plt.subplot(aspect=1)
-    trap_locs_2d = [(scipy.cos(trap_loc),scipy.sin(trap_loc)) for trap_loc in trap_locs]
-    patches = [plt.Circle(center, size) for center, size in zip(trap_locs_2d, radius_scale*sim_trap_counts/max(sim_trap_counts))]
-    coll = matplotlib.collections.PatchCollection(patches, facecolors='blue',edgecolors='blue')
-    ax.add_collection(coll)
-    ax.set_ylim([-plot_size,plot_size]);ax.set_xlim([-plot_size,plot_size])
-    ax.set_xticks([])
-    ax.set_xticklabels('')
-    ax.set_yticks([])
-    ax.set_yticklabels('')
-    #Wind arrow
-    plt.arrow(0.5, 0.5, 0.1*scipy.cos(wind_angle), 0.1*scipy.sin(wind_angle),transform=ax.transAxes,color='b',
-        width=0.001)
-    # ax.text(0.55, 0.5,'Wind',transform=ax.transAxes,color='b')
-    ax.text(0,1.5,'N',horizontalalignment='center',verticalalignment='center',fontsize=25)
-    ax.text(0,-1.5,'S',horizontalalignment='center',verticalalignment='center',fontsize=25)
-    ax.text(1.5,0,'E',horizontalalignment='center',verticalalignment='center',fontsize=25)
-    ax.text(-1.5,0,'W',horizontalalignment='center',verticalalignment='center',fontsize=25)
-    # plt.title('Simulated')
-    fig.patch.set_facecolor('white')
-    plt.axis('off')
-    ax.text(0,1.7,'Trap Counts'+' (Wind Mag: '+str(wind_mag)[0:3]+')',horizontalalignment='center',verticalalignment='center',fontsize=20)
-    plt.savefig(file_name+'.png',format='png')
+# pool.map(main,np.arange(0.4,3.8,0.2)) #wind speeds
+# pool.map(main,[0.025,0.075,0.1,0.125,0.15,0.175,0.2,0.225]) #detection threshold
+# pool.map(main,[1,10,15,40,60,100]) #cast timeout
+# pool.map(main,[0.5,3,5,10,20,40]) #cast delay
 
-pool = Pool(processes=6)
-
-# main(7*np.pi/8)
-
-# pool.map(main,np.arange(0.4,3.8,0.2))
-pool.map(main,[0.025,0.075,0.1,0.125,0.15,0.175,0.2,0.225])
+# pool.map(main,
+#     [[0.5,1.5],
+#     [1,3],
+#     [2,6],
+#     [4,12],
+#     [8,24],
+#     [10,30],
+#     [20,60]]) #cast interval
 
 # pool.map(main,np.linspace(3*np.pi/2,7*np.pi/4,6))
