@@ -23,7 +23,7 @@ import odor_tracking_sim.simulation_running_tools as srt
 
 from multiprocessing import Pool
 
-def g(cast_timeout):
+def g(cast_delay):
 
     wind_angle = 9*scipy.pi/8.
     wind_mag = 1.6
@@ -31,7 +31,9 @@ def g(cast_timeout):
     file_name = 'trap_arrival_by_wind_live_coarse_dt'
     file_name = file_name +'_wind_mag_'+str(wind_mag)
     # file_name = file_name +'_detection_threshold_'+str(detection_threshold)
-    file_name = file_name +'_cast_timeout_'+str(cast_timeout)
+    # file_name = file_name +'_cast_timeout_'+str(cast_timeout)
+    # file_name = file_name +'_cast_interval_'+str(cast_interval)
+    file_name = file_name +'_cast_delay_'+str(cast_delay)
     output_file = file_name+'.pkl'
 
     with open(output_file, 'r') as f:
@@ -83,4 +85,14 @@ def g(cast_timeout):
 
 pool = Pool(processes=6)
 # pool.map(g,[0.025,0.075,0.1,0.125,0.15,0.175,0.2,0.225])
-pool.map(g,[1,10,15,40,60,100])
+# pool.map(g,[1,10,15,40,60,100])
+pool.map(g,[0.5,3,5,10,20,40]) #cast delay
+
+# pool.map(g,
+#     [[0.5,1.5],
+#     [1,3],
+#     [2,6],
+#     [4,12],
+#     [8,24],
+#     [10,30],
+#     [20,60]])

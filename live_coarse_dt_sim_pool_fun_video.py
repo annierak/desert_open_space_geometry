@@ -23,17 +23,18 @@ from pompy import models,processors
 
 from multiprocessing import Pool
 
-def main():
+def main(detection_threshold):
+# def main():
 
     # for wind_mag in np.arange(0.4,3.8,0.2):
     # wind_mag = float(sys.argv[1])
-    wind_angle = 9*scipy.pi/8.
+    wind_angle = 17*scipy.pi/16.
     wind_mag = 1.6
 
     file_name = 'trap_arrival_by_wind_live_coarse_dt'
     # file_name = 'original_plume_test_viz'
     file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]
-    # file_name = file_name +'_detection_threshold_'+str(detection_threshold)
+    file_name = file_name +'_detection_threshold_'+str(detection_threshold)
     # file_name = file_name +'_cast_timeout_'+str(cast_timeout)
     # file_name = file_name +'_cast_delay_'+str(cast_delay)
     # file_name = file_name +'_cast_interval_'+str(cast_interval)
@@ -42,7 +43,7 @@ def main():
     dt = 0.25
     plume_dt = 0.25
     frame_rate = 20
-    times_real_time = 60 # seconds of simulation / sec in video
+    times_real_time = 30 # seconds of simulation / sec in video
     capture_interval = int(scipy.ceil(times_real_time*(1./frame_rate)/dt))
 
     simulation_time = 50.*60. #seconds
@@ -50,8 +51,6 @@ def main():
 
     t_start = 0.0
     t = 0. - release_delay
-
-
 
     # Set up figure
     fig = plt.figure(figsize=(11, 11))
@@ -125,7 +124,7 @@ def main():
 
     plume_model = models.PlumeModel(
         sim_region, source_pos, wind_field,simulation_time+release_delay,
-        plume_dt,plume_cutoff_radius=1500,
+        plume_dt,plume_cutoff_radius=2500,
         centre_rel_diff_scale=centre_rel_diff_scale,
         puff_release_rate=puff_release_rate,
         puff_init_rad=puff_init_rad,puff_spread_rate=puff_spread_rate,
@@ -168,7 +167,7 @@ def main():
             'wind_slippage'       : wind_slippage,
             'odor_thresholds'     : {
                 'lower': 0.0005,
-                'upper': 0.05
+                'upper': detection_threshold
                 },
             'schmitt_trigger':False,
             'low_pass_filter_length':3, #seconds
@@ -197,7 +196,8 @@ def main():
     xmin,xmax,ymin,ymax = -1000,1000,-1000,1000
 
     #For looking at the distace-bound plumes
-    xmin,xmax,ymin,ymax = -3000,3000,-3000,3000
+    # xmin,xmax,ymin,ymax = -3000,3000,-3000,3000
+    xmin,xmax,ymin,ymax = -1500,1500,-1500,1500
 
     buffr = 100
     ax.set_xlim((xmin-buffr,xmax+buffr))
@@ -216,42 +216,124 @@ def main():
     array_gen_flies = processors.ConcentrationValueFastCalculator(
                 box_min,box_max,r_sq_max,epsilon,puff_mol_amount,N)
 
+    #Initial fly plotting
+    #Sub-dictionary for color codes for the fly modes
+    Mode_StartMode = 0
+    Mode_FlyUpWind = 1
+    Mode_CastForOdor = 2
+    Mode_Trapped = 3
+
+
+
+    edgecolor_dict = {Mode_StartMode : 'blue',
+    Mode_FlyUpWind : 'red',
+    Mode_CastForOdor : 'red',
+    Mode_Trapped :   'black'}
+
+    facecolor_dict = {Mode_StartMode : 'blue',
+    Mode_FlyUpWind : 'red',
+    Mode_CastForOdor : 'white',
+    Mode_Trapped :   'black'}
+
+
+    fly_edgecolors = [edgecolor_dict[mode] for mode in swarm.mode]
+    fly_facecolors =  [facecolor_dict[mode] for mode in swarm.mode]
+    fly_dots = plt.scatter(swarm.x_position, swarm.y_position,
+        edgecolor=fly_edgecolors,facecolor = fly_facecolors,alpha=0.9)
+
+    #Put the time in the corner
+    (xmin,xmax) = ax.get_xlim();(ymin,ymax) = ax.get_ylim()
+    text = '0 min 0 sec'
+    timer= ax.text(xmax,ymax,text,color='r',horizontalalignment='right')
+    ax.text(1.,1.02,'time since release:',color='r',transform=ax.transAxes,
+        horizontalalignment='right')
+
+    # #traps
+    for x,y in traps.param['source_locations']:
+
+        #Black x
+        plt.scatter(x,y,marker='x',s=50,c='k')
+
+    #Remove plot edges and add scale bar
+    fig.patch.set_facecolor('white')
+    plt.plot([-900,-800],[900,900],color='k')#,transform=ax.transData,color='k')
+    ax.text(-900,820,'100 m')
+    plt.axis('off')
+
+    #Fly behavior color legend
+    for mode,fly_facecolor,fly_edgecolor,a in zip(
+        ['Dispersing','Surging','Casting','Trapped'],
+        facecolor_dict.values(),
+        edgecolor_dict.values(),
+        [0,50,100,150]):
+
+        plt.scatter([1000],[-600-a],edgecolor=fly_edgecolor,
+        facecolor=fly_facecolor, s=20)
+        plt.text(1050,-600-a,mode,verticalalignment='center')
+
 
     # plt.ion()
     # plt.show()
     # raw_input()
     while t<simulation_time:
         for k in range(capture_interval):
+
             #update flies
             print('t: {0:1.2f}'.format(t))
             #update the swarm
             for j in range(int(dt/plume_dt)):
                 wind_field.update(plume_dt)
                 plume_model.update(plume_dt,verbose=True)
-                # velocity_field = wind_field.velocity_field
-                # u,v = velocity_field[:,:,0],velocity_field[:,:,1]
-                # u,v = u[0:full_size-1:shrink_factor,0:full_size-1:shrink_factor],\
-                # v[0:full_size-1:shrink_factor,0:full_size-1:shrink_factor]
-                # vector_field.set_UVC(u,v)
             if t>0.:
-                # plt.figure()
-                # plt.scatter(plume_model.puffs[:,:,0].flatten(),
-                #     plume_model.puffs[:,:,1].flatten(),alpha=0.1)
-                plt.show()
                 swarm.update(t,dt,wind_field_noiseless,array_gen_flies,traps,plumes=plume_model,
                     pre_stored=False)
             t+= dt
+        if t>0:
+            release_delay = release_delay/60.
+            text ='{0} min {1} sec'.format(int(scipy.floor(t/60.-t_start/60.)),int(scipy.floor(t%60.)))
+            timer.set_text(text)
+
+            fly_dots.set_offsets(scipy.c_[swarm.x_position,swarm.y_position])
+            fly_edgecolors = [edgecolor_dict[mode] for mode in swarm.mode]
+            fly_facecolors =  [facecolor_dict[mode] for mode in swarm.mode]
+            fly_dots.set_edgecolor(fly_edgecolors)
+            fly_dots.set_facecolor(fly_facecolors)
+
+            trap_list = []
+            for trap_num, trap_loc in enumerate(traps.param['source_locations']):
+                mask_trap = swarm.trap_num == trap_num
+                trap_cnt = mask_trap.sum()
+                trap_list.append(trap_cnt)
+            total_cnt = sum(trap_list)
+
+            conc_array = array_gen.generate_single_array(plume_model.puffs)
+
+            log_im = scipy.log(conc_array.T[::-1])
+            cutoff_l = scipy.percentile(log_im[~scipy.isinf(log_im)],10)
+            cutoff_u = scipy.percentile(log_im[~scipy.isinf(log_im)],99)
+
+            conc_im.set_data(log_im)
+            n = matplotlib.colors.Normalize(vmin=cutoff_l,vmax=cutoff_u)
+            conc_im.set_norm(n)
+
+            writer.grab_frame()
+
+    writer.finish()
 
     with open(output_file, 'w') as f:
         pickle.dump((wind_field_noiseless,swarm),f)
 
 
-# pool = Pool(processes=6)
+pool = Pool(processes=6)
 
-main(7*np.pi/8)
+# main()
+# main(0.1)
 
 # pool.map(main,np.arange(0.4,3.8,0.2)) #wind speeds
-# pool.map(main,[0.025,0.075,0.1,0.125,0.15,0.175,0.2,0.225]) #detection threshold
+# pool.map(main,[0.025,.15])
+# 0.075,0.1,0.125,0.15,0.175,0.2,0.225]) #detection threshold
+pool.map(main,[0.025,0.1,.15])
+# 0.075,0.1,0.125,0.15,0.175,0.2,0.225]) #detection threshold
 # pool.map(main,[1,10,15,40,60,100]) #cast timeout
 # pool.map(main,[0.5,3,5,10,20,40]) #cast delay
 
