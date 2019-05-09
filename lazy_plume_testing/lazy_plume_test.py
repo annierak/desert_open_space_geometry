@@ -37,8 +37,8 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
     simulation_time = 50.*60. #seconds
     release_delay = 0.*60#/(wind_mag)
 
-    t_start = 0.0
-    t = 0. - release_delay
+    t_start = 0.25
+    t = 0.25 - release_delay
 
 
 
@@ -53,8 +53,8 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
     writer = FFMpegWriter(fps=frame_rate, metadata=metadata)
     writer.setup(fig, file_name+'.mp4', 500)
 
-    # wind_angle = 7*scipy.pi/8.
-    wind_angle = 7*scipy.pi/4.
+    wind_angle = 7*scipy.pi/8.
+    # wind_angle = 7*scipy.pi/4.
     wind_param = {
                 'speed': wind_mag,
                 'angle': wind_angle,
@@ -119,14 +119,16 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
 
     #Setup fly swarm
     wind_slippage = (0.,1.)
-    swarm_size=2000
+    # swarm_size=2000
+    swarm_size=100
     use_empirical_release_data = False
 
     #Grab wind info to determine heading mean
     wind_x,wind_y = wind_mag*scipy.cos(wind_angle),wind_mag*scipy.sin(wind_angle)
 
     beta = 1.
-    release_times = scipy.random.exponential(beta,(swarm_size,))
+    # release_times = scipy.random.exponential(beta,(swarm_size,))
+    release_times = np.zeros((swarm_size,))
     kappa = 2.
 
     heading_data=None
@@ -140,7 +142,9 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
             'heading_data'        : heading_data,
             'initial_heading'     : scipy.radians(scipy.random.uniform(0.0,360.0,(swarm_size,))),
             'x_start_position'    : scipy.zeros(swarm_size),
-            'y_start_position'    : scipy.zeros(swarm_size),
+            # 'x_start_position'    : np.random.uniform(900,1100,swarm_size),
+            'y_start_position'    : np.random.uniform(0,100,swarm_size),
+            # 'y_start_position'    : scipy.zeros(swarm_size),
             # 'x_start_position'    : (-990/np.sqrt(2.))*scipy.ones(swarm_size),
             # 'y_start_position'    : (990./np.sqrt(2.))*scipy.ones(swarm_size),
             'flight_speed'        : scipy.full((swarm_size,), 1.5),
@@ -168,15 +172,15 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
 
 
     # Concentration plotting
-    conc_d = lazyPompyPlumes.conc_im(im_extents)
-
-    cmap = matplotlib.colors.ListedColormap(['white', 'orange'])
-    cmap = 'YlOrBr'
-
-    conc_im = plt.imshow(conc_d,extent=im_extents,
-        interpolation='none',cmap = cmap,origin='lower')
-
-    plt.colorbar()
+    # conc_d = lazyPompyPlumes.conc_im(im_extents)
+    #
+    # cmap = matplotlib.colors.ListedColormap(['white', 'orange'])
+    # cmap = 'YlOrBr'
+    #
+    # conc_im = plt.imshow(conc_d,extent=im_extents,
+    #     interpolation='none',cmap = cmap,origin='lower')
+    #
+    # plt.colorbar()
 
 
     xmin,xmax,ymin,ymax = -1000,1000,-1000,1000

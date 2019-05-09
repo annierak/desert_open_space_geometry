@@ -79,31 +79,13 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
     traps = trap_models.TrapModel(trap_param)
 
     #Odor arena
-    xlim = (0., 1200.)
+    xlim = (0., 1800.)
     ylim = (-500., 500.)
     sim_region = models.Rectangle(xlim[0], ylim[0], xlim[1], ylim[1])
 
     wind_region = models.Rectangle(xlim[0]*2,ylim[0]*2,
     xlim[1]*2,ylim[1]*2)
     im_extents = xlim[0], xlim[1], ylim[0], ylim[1]
-
-
-    # source_pos = scipy.array([scipy.array(tup) for tup in traps.param['source_locations']]).T
-
-    #wind model setup
-    # diff_eq = False
-    # constant_wind_angle = wind_angle
-    # aspect_ratio= (xlim[1]-xlim[0])/(ylim[1]-ylim[0])
-    # noise_gain=3.
-    # noise_damp=0.071
-    # noise_bandwidth=0.71
-    # wind_grid_density = 200
-    # Kx = Ky = 10000 #highest value observed to not cause explosion: 10000
-    # wind_field = models.WindModel(wind_region,int(wind_grid_density*aspect_ratio),
-    # wind_grid_density,noise_gain=noise_gain,noise_damp=noise_damp,
-    # noise_bandwidth=noise_bandwidth,Kx=Kx,Ky=Ky,noise_rand=random_state,
-    # diff_eq=diff_eq,angle=constant_wind_angle,mag=wind_mag)
-    # source_pos = scipy.array([scipy.array(tup) for tup in traps.param['source_locations']])
 
     #lazy plume parameters
     puff_mol_amount = 1.
@@ -116,34 +98,34 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
 
 
     # Concentration plotting
-    conc_d = lazyPompyPlumes.conc_im(im_extents)
+    # conc_d = lazyPompyPlumes.conc_im(im_extents)
+    #
+    # cmap = matplotlib.colors.ListedColormap(['white', 'orange'])
+    # cmap = 'YlOrBr'
+    #
+    # conc_im = plt.imshow(conc_d,extent=im_extents,
+    #     interpolation='none',cmap = cmap,origin='lower')
+    #
+    # plt.colorbar()
+    #
+    #
+    #
+    # # #traps
+    # for x,y in traps.param['source_locations']:
+    #
+    #     #Black x
+    #     plt.scatter(x,y,marker='x',s=50,c='k')
+    #
+    # plt.ion()
+    # plt.show()
 
-    cmap = matplotlib.colors.ListedColormap(['white', 'orange'])
-    cmap = 'YlOrBr'
-
-    conc_im = plt.imshow(conc_d,extent=im_extents,
-        interpolation='none',cmap = cmap,origin='lower')
-
-    plt.colorbar()
-
-
-
-    # #traps
-    for x,y in traps.param['source_locations']:
-
-        #Black x
-        plt.scatter(x,y,marker='x',s=50,c='k')
-
-    plt.ion()
-    plt.show()
-
-    raw_input()
-    # raw_input()
     while t<simulation_time:
         for k in range(capture_interval):
             #update flies
             print('t: {0:1.2f}'.format(t))
-            swarm.update(t,dt,wind_field_noiseless,lazyPompyPlumes,traps)
+            x_locs,y_locs = np.linspace(0., 1800.,1000),np.random.uniform(-500., 500.,1000)
+            lazyPompyPlumes.value(x_locs,y_locs)
+            raw_input()
             t+= dt
             # time.sleep(0.001)
         # Update live display
