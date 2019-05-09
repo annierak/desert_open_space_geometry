@@ -43,8 +43,8 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
 
 
     # Set up figure
-    fig = plt.figure(figsize=(11, 11))
-    # fig = plt.figure(figsize=(5, 5))
+    # fig = plt.figure(figsize=(11, 11))
+    fig = plt.figure(figsize=(7, 7))
     ax = fig.add_subplot(111)
 
     # #Video
@@ -112,15 +112,25 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
     puff_mol_amount = 1.
     r_sq_max=20;epsilon=0.00001;N=1e6
 
+    centre_rel_diff_scale = 2.
+    puff_release_rate = 10
+    puff_spread_rate=0.005
+    puff_init_rad = 0.01
+    max_num_puffs=int(2e5)
 
     lazyPompyPlumes = models.OnlinePlume(sim_region, source_pos, wind_field_noiseless,
-        simulation_time,dt,r_sq_max,epsilon,puff_mol_amount,N)
+        simulation_time,dt,r_sq_max,epsilon,puff_mol_amount,N,
+        centre_rel_diff_scale = centre_rel_diff_scale,
+        puff_release_rate = puff_release_rate,
+        puff_spread_rate=puff_spread_rate,
+        puff_init_rad = puff_init_rad)
+
 
 
     #Setup fly swarm
     wind_slippage = (0.,1.)
     # swarm_size=2000
-    swarm_size=100
+    swarm_size=10
     use_empirical_release_data = False
 
     #Grab wind info to determine heading mean
@@ -251,7 +261,7 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
 
 
     plt.ion()
-    plt.show()
+    # plt.show()
 
     while t<simulation_time:
         for k in range(capture_interval):

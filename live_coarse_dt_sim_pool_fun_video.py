@@ -47,7 +47,7 @@ def main(detection_threshold):
     capture_interval = int(scipy.ceil(times_real_time*(1./frame_rate)/dt))
 
     simulation_time = 50.*60. #seconds
-    release_delay = 30.*60#/(wind_mag)
+    release_delay = 50.*60#/(wind_mag)
 
     t_start = 0.0
     t = 0. - release_delay
@@ -124,11 +124,11 @@ def main(detection_threshold):
 
     plume_model = models.PlumeModel(
         sim_region, source_pos, wind_field,simulation_time+release_delay,
-        plume_dt,plume_cutoff_radius=2500,
+        plume_dt,plume_cutoff_radius=1500,
         centre_rel_diff_scale=centre_rel_diff_scale,
         puff_release_rate=puff_release_rate,
         puff_init_rad=puff_init_rad,puff_spread_rate=puff_spread_rate,
-        max_num_puffs=max_num_puffs)
+        max_num_puffs=max_num_puffs,max_distance_from_trap = 5000)
 
     # Create a concentration array generator
     array_z = 0.01
@@ -309,7 +309,7 @@ def main(detection_threshold):
             conc_array = array_gen.generate_single_array(plume_model.puffs)
 
             log_im = scipy.log(conc_array.T[::-1])
-            cutoff_l = scipy.percentile(log_im[~scipy.isinf(log_im)],10)
+            cutoff_l = scipy.percentile(log_im[~scipy.isinf(log_im)],1)
             cutoff_u = scipy.percentile(log_im[~scipy.isinf(log_im)],99)
 
             conc_im.set_data(log_im)
@@ -332,7 +332,9 @@ pool = Pool(processes=6)
 # pool.map(main,np.arange(0.4,3.8,0.2)) #wind speeds
 # pool.map(main,[0.025,.15])
 # 0.075,0.1,0.125,0.15,0.175,0.2,0.225]) #detection threshold
-pool.map(main,[0.025,0.1,.15])
+# pool.map(main,[0.025,0.1,.15]) #detection threshold
+pool.map(main,[0.05,0.07]) #detection threshold
+# pool.map(main,[0.1,])
 # 0.075,0.1,0.125,0.15,0.175,0.2,0.225]) #detection threshold
 # pool.map(main,[1,10,15,40,60,100]) #cast timeout
 # pool.map(main,[0.5,3,5,10,20,40]) #cast delay

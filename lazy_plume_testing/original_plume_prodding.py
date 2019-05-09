@@ -124,12 +124,16 @@ while t<simulation_time:
             # values = lazyPompyPlumes.value(np.zeros(10),100.*np.ones(10))
             # raw_input()
             plt.figure()
+
+            # plt.hist(plume_model.puffs[:,:,3][~np.isnan(plume_model.puffs[:,:,3])].flatten()[::10])
+
             plt.scatter(plume_model.puffs[:,:,0].flatten()[::],
                 plume_model.puffs[:,:,1].flatten()[::],alpha=0.1,
-                c=plume_model.puffs[:,:,4].flatten()[::])
+                c=plume_model.puffs[:,:,3].flatten()[::]) #color by r_sq
             plt.xlim((0., 1800.))
             plt.ylim((-30., 30.))
             plt.title(str(np.sum(~np.isnan(plume_model.puffs[:,:,0].flatten()))))
             plt.colorbar()
+
             plt.show()
         t+= dt

@@ -23,15 +23,15 @@ from pompy import models,processors
 
 from multiprocessing import Pool
 
-def main():
+def main(wind_mag):
 
     # for wind_mag in np.arange(0.4,3.8,0.2):
     # wind_mag = float(sys.argv[1])
-    wind_angle = 9*scipy.pi/8.
-    wind_mag = 1.6
+    wind_angle = 13*scipy.pi/8.
+    # wind_mag = 1.6
 
     file_name = 'trap_arrival_by_wind_live_coarse_dt'
-    # file_name = 'original_plume_test_viz'
+    # file_name = file_name + '_pure_advection'
     file_name = file_name +'_wind_mag_'+str(wind_mag)+'_wind_angle_'+str(wind_angle)[0:4]
     # file_name = file_name +'_detection_threshold_'+str(detection_threshold)
     # file_name = file_name +'_cast_timeout_'+str(cast_timeout)
@@ -170,6 +170,7 @@ def main():
                 'lower': 0.0005,
                 'upper': 0.05
                 },
+            'pure_advection':False,
             'schmitt_trigger':False,
             'low_pass_filter_length':3, #seconds
             'dt_plot': capture_interval*dt,
@@ -237,7 +238,7 @@ def main():
                 # plt.figure()
                 # plt.scatter(plume_model.puffs[:,:,0].flatten(),
                 #     plume_model.puffs[:,:,1].flatten(),alpha=0.1)
-                plt.show()
+                # plt.show()
                 swarm.update(t,dt,wind_field_noiseless,array_gen_flies,traps,plumes=plume_model,
                     pre_stored=False)
             t+= dt
@@ -246,11 +247,11 @@ def main():
         pickle.dump((wind_field_noiseless,swarm),f)
 
 
-# pool = Pool(processes=6)
+pool = Pool(processes=6)
 
-main(7*np.pi/8)
+# main(7*np.pi/8)
 
-# pool.map(main,np.arange(0.4,3.8,0.2)) #wind speeds
+pool.map(main,np.arange(0.4,3.8,0.2)) #wind speeds
 # pool.map(main,[0.025,0.075,0.1,0.125,0.15,0.175,0.2,0.225]) #detection threshold
 # pool.map(main,[1,10,15,40,60,100]) #cast timeout
 # pool.map(main,[0.5,3,5,10,20,40]) #cast delay
