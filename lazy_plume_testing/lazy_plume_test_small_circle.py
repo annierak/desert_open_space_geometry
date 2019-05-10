@@ -65,8 +65,8 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
     wind_field_noiseless = wind_models.WindField(param=wind_param)
 
     #traps
-    number_sources = 8
-    radius_sources = 1000.0
+    number_sources = 4
+    radius_sources = 100.0
     trap_radius = 0.5
     location_list, strength_list = utility.create_circle_of_sources(number_sources,
                     radius_sources,None)
@@ -83,8 +83,8 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
     #Wind and plume objects
 
     #Odor arena
-    xlim = (-1500., 1500.)
-    ylim = (-1500., 1500.)
+    xlim = (-150., 150.)
+    ylim = (-150., 150.)
     sim_region = models.Rectangle(xlim[0], ylim[0], xlim[1], ylim[1])
     wind_region = models.Rectangle(xlim[0]*2,ylim[0]*2,
     xlim[1]*2,ylim[1]*2)
@@ -151,9 +151,11 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
             'swarm_size'          : swarm_size,
             'heading_data'        : heading_data,
             'initial_heading'     : scipy.radians(scipy.random.uniform(0.0,360.0,(swarm_size,))),
-            'x_start_position'    : scipy.zeros(swarm_size),
+            # 'x_start_position'    : 55*scipy.ones(swarm_size),
+            'x_start_position'    : np.zeros(swarm_size),
             # 'x_start_position'    : np.random.uniform(900,1100,swarm_size),
-            'y_start_position'    : np.random.uniform(0,100,swarm_size),
+            # 'y_start_position'    : np.random.uniform(0,50,swarm_size),
+            'y_start_position'    : np.random.uniform(30,50,swarm_size),
             # 'y_start_position'    : scipy.zeros(swarm_size),
             # 'x_start_position'    : (-990/np.sqrt(2.))*scipy.ones(swarm_size),
             # 'y_start_position'    : (990./np.sqrt(2.))*scipy.ones(swarm_size),
@@ -193,9 +195,9 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
     # plt.colorbar()
 
 
-    xmin,xmax,ymin,ymax = -1000,1000,-1000,1000
+    xmin,xmax,ymin,ymax = -100,100,-100,100
 
-    buffr = 100
+    buffr = 10
     ax.set_xlim((xmin-buffr,xmax+buffr))
     ax.set_ylim((ymin-buffr,ymax+buffr))
 
@@ -242,12 +244,6 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
         # p = matplotlib.patches.Circle((x, y), 15,color='red')
         # ax.add_patch(p)
 
-    #Remove plot edges and add scale bar
-    fig.patch.set_facecolor('white')
-    plt.plot([-900,-800],[900,900],color='k')#,transform=ax.transData,color='k')
-    ax.text(-900,820,'100 m')
-    plt.axis('off')
-
     #Wind arrow
     arrow_size=0.1
     # arrowstyle=matplotlib.patches.ArrowStyle.Fancy(head_length=2, head_width=2, tail_width=.4)
@@ -255,17 +251,6 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
     (0.9+arrow_size*np.cos(wind_angle), 0.9+arrow_size*np.sin(wind_angle)),
     transform=ax.transAxes,color='orange',mutation_scale=10)#,arrowstyle=arrowstyle)
     ax.add_patch(wind_arrow)
-
-    #Fly behavior color legend
-    for mode,fly_facecolor,fly_edgecolor,a in zip(
-        ['Dispersing','Surging','Casting','Trapped'],
-        facecolor_dict.values(),
-        edgecolor_dict.values(),
-        [0,50,100,150]):
-
-        plt.scatter([1000],[-600-a],edgecolor=fly_edgecolor,
-        facecolor=fly_facecolor, s=20)
-        plt.text(1050,-600-a,mode,verticalalignment='center')
 
 
     plt.ion()
