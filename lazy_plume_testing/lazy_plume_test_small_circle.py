@@ -65,7 +65,7 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
     wind_field_noiseless = wind_models.WindField(param=wind_param)
 
     #traps
-    number_sources = 4
+    number_sources = 8
     radius_sources = 100.0
     trap_radius = 0.5
     location_list, strength_list = utility.create_circle_of_sources(number_sources,
@@ -118,6 +118,11 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
     puff_init_rad = 0.01
     max_num_puffs=int(2e5)
 
+    # swarm_size=2000
+    swarm_size=100
+    # swarm_size =20
+
+
     lazyPompyPlumes = models.OnlinePlume(sim_region, source_pos, wind_field_noiseless,
         simulation_time,dt,r_sq_max,epsilon,puff_mol_amount,N,
         centre_rel_diff_scale = centre_rel_diff_scale,
@@ -129,8 +134,6 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
 
     #Setup fly swarm
     wind_slippage = (0.,1.)
-    # swarm_size=2000
-    swarm_size=10
     use_empirical_release_data = False
 
     #Grab wind info to determine heading mean
@@ -155,8 +158,10 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
             'x_start_position'    : np.zeros(swarm_size),
             # 'x_start_position'    : np.random.uniform(900,1100,swarm_size),
             # 'y_start_position'    : np.random.uniform(0,50,swarm_size),
-            'y_start_position'    : np.random.uniform(30,50,swarm_size),
-            # 'y_start_position'    : scipy.zeros(swarm_size),
+            # 'y_start_position'    : np.random.uniform(30,50,swarm_size),
+            # 'y_start_position'    : np.random.uniform(-70,70,swarm_size),
+            # 'x_start_position'    : np.random.uniform(-70,70,swarm_size),
+            'y_start_position'    : scipy.zeros(swarm_size),
             # 'x_start_position'    : (-990/np.sqrt(2.))*scipy.ones(swarm_size),
             # 'y_start_position'    : (990./np.sqrt(2.))*scipy.ones(swarm_size),
             'flight_speed'        : scipy.full((swarm_size,), 1.5),
@@ -255,7 +260,7 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
 
     plt.ion()
     plt.show()
-    raw_input()
+    # raw_input()
 
     while t<simulation_time:
         for k in range(capture_interval):

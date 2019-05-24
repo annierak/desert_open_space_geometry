@@ -129,8 +129,8 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
 
     #Setup fly swarm
     wind_slippage = (0.,1.)
-    # swarm_size=2000
-    swarm_size=10
+    swarm_size=2000
+    # swarm_size=10
     use_empirical_release_data = False
 
     #Grab wind info to determine heading mean
@@ -153,8 +153,8 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
             'initial_heading'     : scipy.radians(scipy.random.uniform(0.0,360.0,(swarm_size,))),
             'x_start_position'    : scipy.zeros(swarm_size),
             # 'x_start_position'    : np.random.uniform(900,1100,swarm_size),
-            'y_start_position'    : np.random.uniform(0,100,swarm_size),
-            # 'y_start_position'    : scipy.zeros(swarm_size),
+            # 'y_start_position'    : np.random.uniform(0,100,swarm_size),
+            'y_start_position'    : scipy.zeros(swarm_size),
             # 'x_start_position'    : (-990/np.sqrt(2.))*scipy.ones(swarm_size),
             # 'y_start_position'    : (990./np.sqrt(2.))*scipy.ones(swarm_size),
             'flight_speed'        : scipy.full((swarm_size,), 1.5),
@@ -270,7 +270,7 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
 
     plt.ion()
     plt.show()
-    raw_input()
+    # raw_input()
 
     while t<simulation_time:
         for k in range(capture_interval):
@@ -295,7 +295,7 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
         fly_dots.set_edgecolor(fly_edgecolors)
         fly_dots.set_facecolor(fly_facecolors)
         plt.pause(0.0001)
-        writer.grab_frame()
+        # writer.grab_frame()
 
         trap_list = []
         for trap_num, trap_loc in enumerate(traps.param['source_locations']):
