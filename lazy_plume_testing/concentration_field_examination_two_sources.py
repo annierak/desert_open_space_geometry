@@ -25,9 +25,7 @@ random_state = np.random.RandomState(1)
 
 dt = 0.25
 simulation_time = 50.*60.
-wind_angle = np.radians(10)
-wind_angle = np.radians(90)
-# wind_angle = 0.
+wind_angle = np.pi/4
 wind_mag = 1.
 wind_param = {
             'speed': wind_mag,
@@ -38,29 +36,18 @@ wind_param = {
             }
 wind_field_noiseless = wind_models.WindField(param=wind_param)
 
-#traps
-source_locations = [(20.,0.),]
-source_pos = scipy.array([scipy.array(tup) for tup in source_locations]).T
-
-
-trap_param = {
-'source_locations' : [source_pos],
-'source_strengths' : [1.],
-'epsilon'          : 0.01,
-'trap_radius'      : 1.,
-'source_radius'    : 1000.
-}
-
-traps = trap_models.TrapModel(trap_param)
+#sources
+location_list = [(0,10),(0,20),(0,-10)]
+source_pos = scipy.array([scipy.array(tup) for tup in location_list]).T
 
 #Odor arena
-xlim = (-10., 1200.)
+xlim = (-10., 200.)
 ylim = (-50., 50.)
 sim_region = models.Rectangle(xlim[0], ylim[0], xlim[1], ylim[1])
-
 wind_region = models.Rectangle(xlim[0]*2,ylim[0]*2,
 xlim[1]*2,ylim[1]*2)
 im_extents = xlim[0], xlim[1], ylim[0], ylim[1]
+
 
 #lazy plume parameters
 puff_mol_amount = 1.
@@ -75,21 +62,15 @@ plt.figure()
 
 conc_im = lazyPompyPlumes.conc_im(im_extents,samples=150)
 
-plt.imshow(conc_im,extent=im_extents,aspect='auto',cmap='gist_heat_r',origin='lower')
+plt.imshow(conc_im,extent=im_extents,aspect='equal',origin='lower',cmap='bone_r')
 
-
-
-
-#Odor values downwind of the plume in x dimension
-n_samples = 1000
-target_locations_x = np.linspace(1,500,n_samples)
-target_locations_y = np.zeros_like(target_locations_x)
 
 plt.figure()
 
-for j in range(100):
-    conc_values = lazyPompyPlumes.value(target_locations_x,target_locations_y)
-    plt.plot(target_locations_x,conc_values,'o')
-    plt.ylim([0,3.])
-    # raw_input()
-    plt.show()
+#For a point of comparison, use the Gaussian plumes to show what the image should look like approximately
+gaussianfitPlumes = models.GaussianFitPlume(source_pos.T,wind_angle,wind_mag)
+conc_im = gaussianfitPlumes.conc_im(im_extents,samples=150)
+plt.imshow(conc_im,extent=im_extents,aspect='equal',origin='lower',cmap='bone_r')
+
+
+plt.show()

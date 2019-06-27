@@ -129,7 +129,7 @@ def main(wind_mag,i):#np.arange(0.4,3.8,0.2):
 
     #Setup fly swarm
     wind_slippage = (0.,1.)
-    swarm_size=2000
+    swarm_size=500
     # swarm_size=10
     use_empirical_release_data = False
 

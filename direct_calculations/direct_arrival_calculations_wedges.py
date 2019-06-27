@@ -12,30 +12,27 @@ import odor_tracking_sim.utility as utility
 from pompy import models
 from matplotlib.widgets import Slider,Button
 from matplotlib.transforms import Bbox
-from extras import UpdatingVPatch
-from core_functions import f0,f1,f2,f3,f4,f5
+from extras import UpdatingVPatch,plot_wedges
+from core_functions import f0,f1,f1_wedge,f2,f3,f4,f5
 
 
 #First, do a single relase time. Next iteration will incorporate release delays.
 #First draft, use the LogisticPlumeModel object for the plumes.
 
 wind_angle = 7*scipy.pi/8.
-# wind_mag = 1.6
+# wind_angle = 9*scipy.pi/8.
+# wind_angle =15*scipy.pi/16.
 wind_mag = 1.0
-# wind_mag = 2.4
-# wind_mag = 0.6
 num_flies = 20000
-# num_flies = 5
-# num_flies = 10000
 fly_speed = 1.6
+
+initial_cone_angle = np.radians(20.)
 
 release_times=0.
 
 K = -.4
 x_0 = 300
 
-# K = -1.
-# x_0 = 1000
 
 number_sources = 8
 radius_sources = 1000.0
@@ -46,7 +43,6 @@ release_location = np.zeros(2)
 
 intended_heading_angles = np.random.uniform(0,2*np.pi,num_flies)
 intended_heading_angles = np.linspace(0,2*np.pi,num_flies)
-# intended_heading_angles = np.radians(np.array([190,350]))
 
 # Set up logistic prob plume object
 
@@ -57,41 +53,30 @@ xlim = (-1500., 1500.)
 ylim = (-1500., 1500.)
 im_extents = xlim[0], xlim[1], ylim[0], ylim[1]
 
-gaussianfitPlumes = models.GaussianFitPlume(source_pos,wind_angle,wind_mag)
-conc_im = gaussianfitPlumes.conc_im(im_extents,samples=200)
-# conc_im = logisticPlumes.conc_im(im_extents,samples=200)
 fig1, ax = plt.subplots()
-plt.imshow(conc_im,extent=im_extents,aspect='equal',origin='lower',cmap='bone_r')
-
+ax.set_ylim(list(ylim))
+ax.set_xlim(list(xlim))
+ax.set_aspect('equal')
 for x,y in source_locations:
 
     #Black x
     plt.scatter(x,y,marker='x',s=50,c='k')
 
+wedge_points = plot_wedges(source_pos,wind_angle,initial_cone_angle)
+plume_wedges = [matplotlib.patches.Polygon(
+    wedge_points[:,i,:],color='black',alpha=0.2) for i in range(number_sources)]
 
-last = time.time()
+for plume_wedge in plume_wedges:
+    ax.add_patch(plume_wedge)
+
+
 #Convert intended heading angles to track heading angles
 track_heading_angles,dispersing_speeds = f0(intended_heading_angles,wind_mag,
     wind_angle)
-# raw_input()
-
-
-# if num_flies<50:
-#     plt.figure(1)
-#     for i in range(num_flies):
-#         plt.plot([0,1500*np.cos(track_heading_angles[i])],
-#             [0,1500*np.sin(track_heading_angles[i])],label='fly '+
-#                 str(i)+', track '+str(np.degrees(track_heading_angles[i]))[0:4])
-#     plt.legend()
-#
-# else:
-
-
-
 
 #Convert track_heading_angles to a list of plume intersection locations for each fly
-intersection_distances,dispersal_distances = f1(
-    track_heading_angles,source_pos,wind_angle)
+intersection_distances,dispersal_distances = f1_wedge(
+    track_heading_angles,source_pos,wind_angle,initial_cone_angle)
 #Convert intersection_distances to probabilities
 success_probabilities = f2(intersection_distances,K,x_0,source_pos,wind_angle)
 # print('(flies x traps)')
@@ -100,25 +85,11 @@ success_probabilities = f2(intersection_distances,K,x_0,source_pos,wind_angle)
 plume_assignments = f3(success_probabilities,dispersal_distances)
 
 #Compute the time each fly intersected the plume it ended up detecting
-dispersal_travel_times = f4(plume_assignments,dispersal_distances,dispersing_speeds)
+dispersal_travel_times,release_to_chosen_plume_distances = f4(plume_assignments,dispersal_distances,dispersing_speeds)
 #compute the time each fly arrived at the source of the plume it successfully chases
 arrival_times,chasing_times,\
     which_flies,which_traps = f5(plume_assignments,dispersal_travel_times,
         intersection_distances,fly_speed,release_times)
-
-# sys.exit()
-# print(which_traps)
-# print(which_flies)
-
-# for trap in range(8):
-#     print(dispersal_travel_times[which_flies[which_traps==trap]])
-#     print(chasing_times[which_flies[which_traps==trap]])
-#     print(arrival_times[which_traps==trap])
-#     print('--------')
-
-# raw_input('Continue to arrival histogram?')
-
-# plt.figure(2)
 
 num_bins = 50
 
@@ -237,6 +208,9 @@ K_slider = Slider(K_ax , 'K', 0., 1.0, valinit=0.4)
 x_0_ax = plt.axes([.2, .15, 0.65, 0.03],transform=fig2.transFigure)
 x_0_slider = Slider(x_0_ax, 'x_0', 0., 1000.0, valinit=300.)
 
+cone_angle_ax = plt.axes([.2, .0, 0.65, 0.03],transform=fig2.transFigure)
+cone_angle_slider = Slider(cone_angle_ax, 'cone_width', 0., 40.0, valinit=np.degrees(initial_cone_angle)) #in degrees
+
 
 reset_axis = plt.axes([.9, 0.075, 0.08, 0.03])
 button = Button(reset_axis, 'Reset', color='purple', hovercolor='0.975')
@@ -244,14 +218,23 @@ button = Button(reset_axis, 'Reset', color='purple', hovercolor='0.975')
 
 
 #This is setting up the animated plot for the flies moving through space
+
+scatter_currently_headings= True #False is the headings, True is the plume intersections
+
 time = 5*60.
 mag = time*dispersing_speeds
 plt.figure(fig1.number)
-fly_dots = plt.scatter(mag*np.cos(track_heading_angles),mag*np.sin(track_heading_angles))
+fly_dots = plt.scatter(mag*np.cos(track_heading_angles),
+    mag*np.sin(track_heading_angles),color='r',alpha=0.02)
 plt.xticks([])
 plt.yticks([])
 axtime = plt.axes([.2, .0, 0.65, 0.03],transform=fig1.transFigure)
 stime = Slider(axtime, 'Time', 0., 20.0, valinit=5.)
+
+toggle_axis = plt.axes([.9, 0.075, 0.08, 0.03])
+button1 = Button(toggle_axis, 'Headings/Intercepts', color='purple', hovercolor='0.975')
+
+
 
 #Setting up figure 3, trap arrival histogram
 
@@ -340,14 +323,21 @@ plt.axis('off')
 
 
 def update(val):
+
+    global scatter_currently_headings
+
     wind_mag = windmag_slider.val
     K = -1.*K_slider.val
     x_0 = x_0_slider.val
+    cone_angle = np.radians(cone_angle_slider.val)
     track_heading_angles,dispersing_speeds = f0(intended_heading_angles,wind_mag,wind_angle)
-    intersection_distances,dispersal_distances = f1(track_heading_angles,source_pos,wind_angle)
+    intersection_distances,dispersal_distances = f1_wedge(
+        track_heading_angles,source_pos,wind_angle,cone_angle)
+
     success_probabilities = f2(intersection_distances,K,x_0,source_pos,wind_angle)
     plume_assignments = f3(success_probabilities,dispersal_distances)
-    dispersal_travel_times = f4(plume_assignments,dispersal_distances,dispersing_speeds)
+    dispersal_travel_times,release_to_chosen_plume_distances = f4(
+        plume_assignments,dispersal_distances,dispersing_speeds)
     arrival_times,chasing_times,\
         which_flies,which_traps = f5(plume_assignments,
             dispersal_travel_times,intersection_distances,fly_speed,release_times)
@@ -373,59 +363,49 @@ def update(val):
             lines[i].set_xdata(bins)
 
             new_maxes[i] = max(400.,50*np.ceil(max(cum_n)/50.))
-
-
-        #     xs,ys = cdf_patches[i].get_xy().T
-        #     # print(patches[i].get_xy())
-        #     old_bbox = cdf_patches[i].get_extents()
-        #     print(old_bbox)
-        #     [[x0, y0], [x1, y1]] = old_bbox.get_points()
-        #     x0 = min(t_sim)
-        #     y0 = max(t_sim)
-        #
-        #     # new_bbox = Bbox([[x0, y0], [x1, y1]])
-        #     # cdf_patches[i].set_clip_box(new_bbox)
-        #     old_bbox.set_points([[x0, y0], [x1, y1]])
-        #     new = cdf_patches[i].get_extents()
-        #     print(new)
-        #     print('--------')
-        #     # cdf_patches[i].set_xy(np.vstack((xs,ys)).T)
-        #     # raw_input()
-        #     # cdf_patches[i].set_x(min(t_sim))
-        #     # cdf_patches[i].set_width(max(t_sim)-min(t_sim))
-
-            # cdf_patches[i].update(min(t_sim),max(t_sim)-min(t_sim))
-
+            trap_counts[i]=max(cum_n)
 
 
         except(ValueError):
             lines[i].set_ydata(np.zeros_like(lines[i].get_ydata))
-
-        try:
-            trap_counts[i]=max(cum_n)
-        except:
             trap_counts[i]=0
 
         patch_object = cdf_patches[i]
-        patch_object.update(min(t_sim),max(t_sim)-min(t_sim))
-        patch_object.rectangle.set_height(ax.get_ylim()[1])
+        try:
+            patch_object.update(min(t_sim),max(t_sim)-min(t_sim))
+            patch_object.rectangle.set_height(ax.get_ylim()[1])
+            cdf_steepnesses[i] = trap_counts[i]/(max(t_sim)-min(t_sim))
+            first_hit_times[i] = min(t_sim)
+        except(ValueError):
+            pass
         #print(patch_object.rectangle.get_x())
         #print('---------')
-        cdf_steepnesses[i] = trap_counts[i]/(max(t_sim)-min(t_sim))
-        first_hit_times[i] = min(t_sim)
 
 
 
     for i,ax in enumerate(axes):
         ax.set_ylim([0,np.max(new_maxes)])
 
-
     #(2) update the fly heading display
     time = stime.val*60.
-    fly_dots.set_offsets(
-        scipy.c_[
-            time*dispersing_speeds*np.cos(track_heading_angles),
-            time*dispersing_speeds*np.sin(track_heading_angles)])
+
+
+    if scatter_currently_headings:
+        fly_dots.set_offsets(
+            scipy.c_[
+                time*dispersing_speeds*np.cos(track_heading_angles),
+                time*dispersing_speeds*np.sin(track_heading_angles)])
+    else:
+        fly_dots.set_offsets(
+            scipy.c_[
+                release_to_chosen_plume_distances*np.cos(track_heading_angles),
+                release_to_chosen_plume_distances*np.sin(track_heading_angles)])
+
+    #(2a) update the plume wedges
+    wedge_points = plot_wedges(source_pos,wind_angle,cone_angle)
+    for i,wedge in enumerate(plume_wedges):
+        wedge.set_xy(wedge_points[:,i,:])
+
 
     #(3) update the trap histogram figure
 
@@ -448,15 +428,54 @@ def update(val):
 windmag_slider.on_changed(update)
 K_slider.on_changed(update)
 x_0_slider.on_changed(update)
+cone_angle_slider.on_changed(update)
 
 def reset(event):
     windmag_slider.reset()
     K_slider.reset()
     x_0_slider.reset()
+    cone_angle_slider.reset()
+    stime.reset()
 
 button.on_clicked(reset)
 
+def toggle(event):
 
+    global scatter_currently_headings
+    K = -1.*K_slider.val
+    x_0 = x_0_slider.val
+    time = stime.val*60.
+
+    wind_mag = windmag_slider.val
+    cone_angle = np.radians(cone_angle_slider.val)
+    track_heading_angles,dispersing_speeds = f0(intended_heading_angles,wind_mag,wind_angle)
+
+    if scatter_currently_headings:
+
+        intersection_distances,dispersal_distances = f1_wedge(
+            track_heading_angles,source_pos,wind_angle,cone_angle)
+        success_probabilities = f2(intersection_distances,K,x_0,source_pos,wind_angle)
+        plume_assignments = f3(success_probabilities,dispersal_distances)
+        dispersal_travel_times,release_to_chosen_plume_distances = f4(
+            plume_assignments,dispersal_distances,dispersing_speeds)
+        fly_dots.set_offsets(
+            scipy.c_[
+                release_to_chosen_plume_distances*np.cos(track_heading_angles),
+                release_to_chosen_plume_distances*np.sin(track_heading_angles)])
+        scatter_currently_headings = not(scatter_currently_headings)
+    else:
+        fly_dots.set_offsets(
+            scipy.c_[
+                time*dispersing_speeds*np.cos(track_heading_angles),
+                time*dispersing_speeds*np.sin(track_heading_angles)])
+        scatter_currently_headings = not(scatter_currently_headings)
+
+    fig1.canvas.draw_idle()
+
+
+
+
+button1.on_clicked(toggle)
 
 def update1(val):
 

@@ -16,3 +16,31 @@ class UpdatingVPatch(object):
         self.rectangle.set_x(new_x_0)
         self.rectangle.set_width(new_width)
         # return self.rectangle
+
+def plot_wedges_old(source_pos,wind_angle,cone_angle):
+    length = 1000
+    first_arms = np.array(
+        (source_pos[:,0]+length*np.cos(wind_angle+cone_angle),
+        source_pos[:,1]+length*np.sin(wind_angle+cone_angle))).T
+    second_arms = np.array(
+        (source_pos[:,0]+length*np.cos(wind_angle-cone_angle),
+        source_pos[:,1]+length*np.sin(wind_angle-cone_angle))).T
+    #shape traps x 2
+
+    merged = np.stack((first_arms,source_pos,second_arms))
+    # print(merged)
+
+    return merged[:,:,0],merged[:,:,1]
+
+
+def plot_wedges(source_pos,wind_angle,cone_angle):
+    length = 2000
+    first_arms = np.array(
+        (source_pos[:,0]+length*np.cos(wind_angle+cone_angle),
+        source_pos[:,1]+length*np.sin(wind_angle+cone_angle))).T
+    second_arms = np.array(
+        (source_pos[:,0]+length*np.cos(wind_angle-cone_angle),
+        source_pos[:,1]+length*np.sin(wind_angle-cone_angle))).T
+    #shape traps x 2
+    merged = np.stack((first_arms,source_pos,second_arms))
+    return merged
