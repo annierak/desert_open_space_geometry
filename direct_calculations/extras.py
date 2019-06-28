@@ -6,7 +6,10 @@ import sys
 import itertools
 import h5py
 import json
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except(ModuleNotFoundError):
+    import pickle
 import numpy as np
 
 class UpdatingVPatch(object):

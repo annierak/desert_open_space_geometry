@@ -257,6 +257,130 @@ def f1_wedge(track_heading_angles,source_locations,wind_angle,
         #entry is the distance traveled from the release point to the intersection point
 
 
+def f1_inside_wedge(track_heading_angles,source_locations,wind_angle,
+        cone_angle,release_location=np.array([0,0])):
+
+        #Different version of f1_wedge, in which each fly draws
+        #an angle between the wedge edges (uniformly at random)
+        #which determines the location in the plume it intersects.
+
+        #That is, for each plume it intersects the fly is assigned
+        #a plume angle within the angle range specified by the wedge.
+
+        #Using geometric algorithm here: http://geomalgorithms.com/a05-_intersect-1.html
+        #referring to diagram under 'Non-Parallel Lines'
+
+        #u - vector from source (P_0) downwind
+        #v - heading vector originating from release location (Q_0)
+        #w - vector from release location (Q_0) to source (P_0)
+        #s_1 - distance along u from source (P_0) to intersection point
+        #t_1 - distance along v from release_location (Q_0) to intersection point
+
+        #Turn the track heading angles into unit vectors (v)
+        fly_unit_vectors = np.vstack((np.cos(track_heading_angles),np.sin(track_heading_angles)))
+
+        #shape is (2 x flies)
+        #Turn (wind_angle-cone_angle,wind_angle+cone_angle) into a plume unit vector (u)
+        plume_unit_vector = np.array(
+            [[np.cos(wind_angle-cone_angle),np.sin(wind_angle-cone_angle)],
+            [np.cos(wind_angle+cone_angle),np.sin(wind_angle+cone_angle)]])
+
+        #shape is (cone sides (2) x 2)
+
+        #Compute vector from release location to each source
+        w = source_locations - release_location
+        #shape is (traps x 2)
+
+        #Compute s_1 & t_1
+
+        #In the none-wedge version, the below have shape (traps x 2 x flies), and
+        #then collapse to (traps x flies) after the computation.
+
+        #For wedges, add an extra dimension to the front
+        #for 'which cone side' (-cone_angle,cone_angle)
+
+        #new shape is (2 x traps x 2 x flies)--> collapse to (2 x traps x flies)
+
+        #s_1 = (v2*w1-v1*w2)/(v1*u2-v2*u1)
+        s_1 = (fly_unit_vectors[None,None,1,:]*w[None,:,0,None]
+            -fly_unit_vectors[None,None,0,:]*w[None,:,1,None])/(
+                fly_unit_vectors[None,None,0,:]*plume_unit_vector[:,None,1,None]-
+                    fly_unit_vectors[None,None,1,:]*plume_unit_vector[:,None,0,None])
+
+        #t_1 = (u1*w2-u2*w1)/(u1*v2-u2*v1)
+        t_1 = (plume_unit_vector[:,None,0,None]*w[None,:,1,None]
+            -plume_unit_vector[:,None,1,None]*w[None,:,0,None])/(
+                fly_unit_vectors[None,None,1,:]*plume_unit_vector[:,None,0,None]-
+                    fly_unit_vectors[None,None,0,:]*plume_unit_vector[:,None,1,None])
+
+        #collapse extra axis
+        s_1 = np.squeeze(s_1) #now shape is (2 x traps x flies)
+
+        #set all intersection values where s_1 or t_1 is negative to np.inf
+
+        # fig10 = plt.figure(10)
+        #
+        # to_plot = np.concatenate((
+        #     track_heading_angles[(s_1[1,3,:]>0.)],#&(s_1[1,3,:]>0.)],
+        #     track_heading_angles[(s_1[1,3,:]>0.)]))  #&(s_1[1,3,:]>0.)]))
+        #
+        # n,bins = np.histogram(to_plot%(2*np.pi),bins=np.linspace(0,2*np.pi,50))
+        #
+        # try:
+        #     global hist
+        #     hist.set_ydata(n)
+        #     hist.set_xdata(bins[:-1])
+        # except(NameError):
+        #     hist, = plt.plot(bins[:-1],n,'o')
+        #
+        # fig10.canvas.draw_idle()
+
+        inds = (s_1>0.)&(t_1>0.)
+        s_1[~inds] = np.inf
+        t_1[~inds] = np.inf
+
+        #For some reason the below does NOT have the identical effect as the above
+        #for wide cone angles (>pi/8)
+
+        # s_1[s_1<0.] = np.inf
+        # t_1[s_1<0.] = np.inf
+        # # s_1[t_1<0.] = np.inf
+        # t_1[t_1<0.] = np.inf
+
+        #collapse s_1 and t_1 along the 'which cone side' dimension
+        #by selecting the cone side with the shorter (finite, positive)
+        #t_1 (distance from release_location to intersection point)
+
+        #first collapse t_1
+        collapsed_t_1 = np.min(t_1,axis=0)
+
+        where_no_intersections = np.isinf(collapsed_t_1) #value true for fly-trap pairs with no intersection
+
+        #make cone_side_mask, shape (traps x flies) which is a mask (entries (0,1))
+        #of which cone sides were intersected (nan if neither)
+        cone_side_mask_rough = (t_1==np.min(t_1,axis=0))
+        cone_side_mask = np.full(np.shape(collapsed_t_1),np.nan)
+        cone_side_mask[cone_side_mask_rough[0]] = 0.
+        cone_side_mask[cone_side_mask_rough[1]] = 1.
+        cone_side_mask[where_no_intersections] = np.nan
+
+        #now collapse s_1, the distance from source (P_0) to intersection point,
+        #by selecting the assigned side (or none of them)
+
+        collapsed_s_1 = np.full(np.shape(collapsed_t_1),np.nan)
+
+        collapsed_s_1[(cone_side_mask==0.)] = s_1[
+            0,np.where(cone_side_mask==0)[0],np.where(cone_side_mask==0)[1]]
+        collapsed_s_1[(cone_side_mask==1.)] = s_1[
+            1,np.where(cone_side_mask==1.)[0],np.where(cone_side_mask==1.)[1]]
+
+        #Check that the shape of s_1 and t_1 are as expected
+
+        return collapsed_s_1.T,collapsed_t_1.T
+        #s_1.T - shape is (n flies x n plumes), entry is the distance downwind of that plume
+        #t_1.T - shape is (n flies x n plumes),
+            #entry is the distance traveled from the release point to the intersection point)
+
 def f2(intersection_distances,K,x_0,source_locations,wind_angle):
     #Convert intersection_distances to probabilities
     #using a specified distance-probability function
